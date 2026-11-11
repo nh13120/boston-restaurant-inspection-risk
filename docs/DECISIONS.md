@@ -121,3 +121,27 @@ No third proposal was made, and there is no second round, because more rounds wo
 ## Freeze
 
 **F.1** `docs/FROZEN_CONFIG.json` is a copy of `results/selected_settings.json` made at the freeze commit. Notebook 04 reads the frozen file and asserts that the feature list has not changed. Final model: M1 (LightGBM on history features), 31 leaves, learning rate 0.02, 231 trees. M2: 7 leaves, learning rate 0.05, 100 trees. Every model is refitted on 2016 to 2023 for the test run.
+
+## Phase 6: final test evaluation
+
+**D6.1 Refit.** Every model is refitted on 2016 to 2023 with its frozen settings and scores 2024-01-02 to 2026-11-10 once. LightGBM keeps the number of trees that early stopping found on validation (231 for M1). Alternative: scale the tree count up for the larger fitting set, which would be one more untested choice.
+
+**D6.2 What the test showed.** Hit rates at 20% capacity: random order 59.0%, B1 80.3%, B2 87.0%, M1 88.1%, M2 88.8%. M1's lead over logistic regression is 1.1 points (CI 0.3 to 1.9, beyond noise; it was borderline on validation). M2 is 0.7 points ahead of M1 (CI 0.1 to 1.4). Validation had shown no edge for text, and the gap is close to M2's device noise. We keep M1 as the final model: switching after seeing the test would be tuning on it. The README reports the text edge as "between zero and about one and a half points".
+
+**D6.3 Notebook 04 was executed twice.** The second run only changed a figure title and added an explanatory text cell. Settings, code paths and numbers are identical.
+
+**D6.4 Robustness.** Without the 693 test inspections whose previous visit failed (likely late follow-ups), the order of the models is unchanged, but B1 rises to 84.8% and M1's lead over it narrows from 7.8 to 3.7 points. The README says so. Ranked year by year, M1 scores 90.1%, 88.9% and 84.9% for 2024, 2025 and 2026.
+
+## Phase 7: impact
+
+**D7.1 Volume.** 17,171 test inspections over 2.86 years give 6,007 routine inspections a year, so 20% capacity is 1,201 visits a year.
+
+**D7.2 Random order.** Its yield is the fail rate times the visits (709 failures a year), the average over all random orders. Assumption: today's routine schedule is no better than random at finding failures. We cannot verify that from the data, because we only see the visits ISD made.
+
+**D7.3 Inspections saved.** The smallest number of visits, in M1's risk order, that finds as many failures as B1 finds with the full 20% capacity: 3,102 against 3,434 in the test period, or 116 fewer a year.
+
+**D7.4 Dollars.** `COST_PER_FAILURE_LOW` and `COST_PER_FAILURE_HIGH` stay `None`. We have no sourced cost of a failure found late, so the impact is in failures and inspections only.
+
+**D7.5 Time to discovery.** Within each calendar quarter we keep the dates on which ISD actually made its visits and hand them out in risk order. A failing restaurant is then visited 1.1 weeks earlier on average. Assumptions: the set of restaurants visited in a quarter is fixed, and a visit's outcome does not depend on the week it happens. Alternatives: reorder within a year or a half-year, which gives larger numbers but strains the second assumption; quarters are the cautious choice. The scores use features as of the actual visit date, so this is an estimate of the size of the effect and not a schedule.
+
+**D7.6 Priority list.** M1 is refitted on all labeled data (2016 to the snapshot) and scores a placeholder inspection dated 2026-11-11 for each active restaurant, built with the same feature code. "Active" means an active license and an inspection in the last two years (3,320 restaurants). The 157 that failed in the last 30 days are left out, because ISD re-inspects them anyway. The three drivers per restaurant come from LightGBM's own contribution values (`pred_contrib`), which need no extra package. Zip and neighborhood are added up into one "location" driver. Drivers describe the model, and are not causes.

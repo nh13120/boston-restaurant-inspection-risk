@@ -1,0 +1,11 @@
+quantity,value,unit,how_computed
+Routine inspections per year,6007.38290229885,inspections,"17,171 test inspections over 2.86 years"
+Fail rate in the test period,0.590006406149904,share,share of test inspections that failed
+Visits per year at 20% capacity,1201.47658045977,inspections,20% x inspections per year
+"Failures found per year, random order",708.8788793103448,failures,fail rate x visits (expected value of a random order)
+"Failures found per year, past-failure-rate rule (B1)",964.1903030846453,failures,B1 test hit rate x visits
+"Failures found per year, M1_lgbm",1058.377011034014,failures,M1_lgbm test hit rate x visits
+Extra failures found per year vs. random order,349.4981317236692,failures,difference of the two lines above
+Extra failures found per year vs. the rule (B1),94.18670794936872,failures,difference of the two lines above
+Inspections saved per year to match the rule (B1),116.15229885057471,inspections,"M1_lgbm needs 3,102 test visits to find the 2756 failures B1 finds in 3,434"
+"Weeks earlier a failing restaurant is visited, on average",1.1142885344839741,weeks,"risk order within each of 12 calendar quarters, actual visit slots kept; 10,131 failed inspections"

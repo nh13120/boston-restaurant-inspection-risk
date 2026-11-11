@@ -6,7 +6,7 @@ catch_at_k                      = share of all failures that the visited inspect
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.metrics import roc_auc_score
+from scipy.stats import rankdata
 
 SEED = 42
 K = 0.20   # ISD capacity: visit the riskiest 20% first
@@ -25,14 +25,23 @@ MODEL_COLORS = {
 }
 
 
-def _ranked(y, score, seed=SEED):
-    """Labels sorted from highest to lowest score, for curves. Ties are broken at random, so a
-    model that gives many rows the same score gets no credit from row order. The random stream
-    is derived from the seed (42) but is separate from every other use of it."""
-    y, score = np.asarray(y), np.asarray(score, dtype=float)
-    tie_breaker = np.random.default_rng([seed, 1]).random(len(y))
-    order = np.lexsort((tie_breaker, -score))   # sort by -score, then by the tie breaker
-    return y[order]
+def _auc(y, score):
+    """Area under the ROC curve from ranks (the Mann-Whitney formula; tied scores get the
+    average rank). Same value as sklearn's roc_auc_score, several times faster, which matters
+    for 10,000 bootstrap resamples."""
+    n_pos = y.sum()
+    n_neg = len(y) - n_pos
+    return (rankdata(score)[y == 1].sum() - n_pos * (n_pos + 1) / 2) / (n_pos * n_neg)
+
+
+def _expected_ranked(y, score):
+    """Labels sorted from highest to lowest score. Inspections that share a score are replaced
+    by their group's fail rate: the average over every random order of the tied rows. A rule
+    with many tied scores (such as B1, or the constant B0) gets no credit from row order."""
+    y, score = np.asarray(y, dtype=float), np.asarray(score, dtype=float)
+    order = np.argsort(-score, kind="stable")
+    y_sorted, s_sorted = pd.Series(y[order]), score[order]
+    return y_sorted.groupby(s_sorted, sort=False).transform("mean").to_numpy()
 
 
 def evaluate(y, score, k=K):
@@ -49,7 +58,7 @@ def evaluate(y, score, k=K):
     above, tied = score > cutoff, score == cutoff
     hits = y[above].sum() + (n_top - above.sum()) * y[tied].mean()
     return {
-        "auc": roc_auc_score(y, score),
+        "auc": _auc(y, score),
         "catch_at_k": hits / y.sum(),
         "precision_at_k": hits / n_top,
         "n": n,
@@ -57,8 +66,9 @@ def evaluate(y, score, k=K):
 
 
 def gains_curve(y, score):
-    """Share of failures caught as a function of the share of inspections made."""
-    y_sorted = _ranked(y, score)
+    """Share of failures caught as a function of the share of inspections made (expected value
+    over ties, so it agrees with evaluate() at every capacity)."""
+    y_sorted = _expected_ranked(y, score)
     n = len(y_sorted)
     return pd.DataFrame({
         "share_inspected": np.arange(0, n + 1) / n,
@@ -101,11 +111,10 @@ def bootstrap_ci(y, score, metric, n=500, seed=SEED, k=K, groups=None):
     return bootstrap_all(y, score, n=n, seed=seed, k=k, groups=groups)[metric]
 
 
-def paired_differences(y, score_a, score_b, n=2000, seed=SEED, k=K, groups=None):
+def paired_differences(y, score_a, score_b, n=10_000, seed=SEED, k=K, groups=None):
     """metric(a) - metric(b) with a 95% CI, using the SAME resamples for both models.
 
-    Returns {metric: (difference, low, high)}. If the interval excludes 0, the difference is
-    larger than the sampling noise.
+    Returns {metric: (difference, low, high)}.
     """
     y, score_a, score_b = np.asarray(y), np.asarray(score_a, dtype=float), np.asarray(score_b, dtype=float)
     point_a, point_b = evaluate(y, score_a, k), evaluate(y, score_b, k)
@@ -117,18 +126,35 @@ def paired_differences(y, score_a, score_b, n=2000, seed=SEED, k=K, groups=None)
     return {m: (point_a[m] - point_b[m], *np.percentile(diffs[m], [2.5, 97.5])) for m in METRICS}
 
 
-def bootstrap_diff_ci(y, score_a, score_b, metric, n=2000, seed=SEED, k=K, groups=None):
+def verdict(diff, lo, hi):
+    """Words for a paired difference, fixed before the test was scored.
+
+    Look at the end of the 95% interval nearest to zero, on the side of the difference:
+      - "beyond noise": that end is clearly away from zero (by more than 10% of the interval's width);
+      - "borderline":   that end is about zero (within 10% of the width, either side);
+      - "within noise": the interval comfortably contains zero.
+    A yes/no flag on "interval excludes zero" would flip with the number of resamples when the
+    end sits on zero. The middle category avoids that.
+    """
+    margin = 0.1 * (hi - lo)
+    near = lo if diff >= 0 else -hi
+    if near > margin:
+        return "beyond noise"
+    return "borderline" if near >= -margin else "within noise"
+
+
+def bootstrap_diff_ci(y, score_a, score_b, metric, n=10_000, seed=SEED, k=K, groups=None):
     """95% CI for metric(a) - metric(b) on the same resamples (see paired_differences)."""
     return paired_differences(y, score_a, score_b, n=n, seed=seed, k=k, groups=groups)[metric][1:]
 
 
-def difference_table(y, scores, model, others, groups=None, n=2000):
+def difference_table(y, scores, model, others, groups=None, n=10_000):
     """Paired differences `model` minus each of `others`, one row per pair and metric."""
     rows = []
     for other in others:
         for metric, (diff, lo, hi) in paired_differences(y, scores[model], scores[other], n=n, groups=groups).items():
             rows.append({"model": model, "minus": other, "metric": metric, "difference": diff,
-                         "ci_lo": lo, "ci_hi": hi, "beyond_noise": bool(lo > 0 or hi < 0)})
+                         "ci_lo": lo, "ci_hi": hi, "verdict": verdict(diff, lo, hi)})
     return pd.DataFrame(rows)
 
 
@@ -178,6 +204,7 @@ def plot_gains(y, scores, title, path=None, k=K):
 
 def self_test():
     """Sanity checks: a perfect score and a random score must give the textbook values."""
+    from sklearn.metrics import roc_auc_score
     rng = np.random.default_rng(SEED)
     for base_rate in [0.1, 0.59]:
         y = (rng.random(20_000) < base_rate).astype(int)
@@ -185,6 +212,8 @@ def self_test():
         expected = min(1.0, K / y.mean())
         assert abs(perfect["catch_at_k"] - expected) < 0.01, (perfect, expected)
         assert perfect["auc"] == 1.0
+        noisy = y + rng.random(len(y)).round(1)          # a score with many ties
+        assert abs(_auc(y, noisy) - roc_auc_score(y, noisy)) < 1e-12, "rank-based AUC must equal sklearn's"
         assert abs(perfect["precision_at_k"] - min(1.0, y.mean() / K)) < 0.01
         random = evaluate(y, rng.random(len(y)))
         assert abs(random["catch_at_k"] - K) < 0.02, random
@@ -206,6 +235,11 @@ def self_test():
     assert lo < y[:2000].mean() < hi
     s_same = rng.random(2000)
     assert paired_differences(y[:2000], s_same, s_same, n=50, groups=groups)["precision_at_k"] == (0.0, 0.0, 0.0)
+    # The gains curve agrees with evaluate() at the capacity, ties included.
+    curve = gains_curve(y_small, tied_scores)
+    assert abs(curve["share_failures_caught"][3] - evaluate(y_small, tied_scores, k=0.3)["catch_at_k"]) < 1e-12
+    assert verdict(0.10, 0.08, 0.12) == "beyond noise" and verdict(0.015, 0.0, 0.029) == "borderline"
+    assert verdict(0.015, 0.0009, 0.029) == "borderline" and verdict(0.001, -0.012, 0.010) == "within noise"
     print("evaluate.py self-test passed: perfect score gives catch_at_k = min(1, k / base rate); "
           "random and constant scores give about k")
 

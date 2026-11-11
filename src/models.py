@@ -106,7 +106,7 @@ def fit_lgbm(train, features, params, val=None):
     return model.fit(
         train[features], train[TARGET],
         eval_X=val[features], eval_y=val[TARGET], eval_metric="auc",
-        callbacks=[lgb.early_stopping(stopping_rounds=50, verbose=False)],
+        callbacks=[lgb.early_stopping(stopping_rounds=50, first_metric_only=True, verbose=False)],   # stop on AUC only
     )
 
 

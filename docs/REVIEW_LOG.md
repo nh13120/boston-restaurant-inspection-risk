@@ -89,3 +89,20 @@ Same prompt, fresh subagent. Verdict: 0 BLOCKER, 1 MAJOR, 8 MINOR. All five pred
 | 7 | MINOR | A one-feature rule beats B1 by 4 points. | Added as a sensitivity row in notebooks 02 and 04 (G2.8). |
 | 8 | MINOR | Validation was reused across rounds, which the notebook did not say. | Notebook 03 now says every validation number is optimistic and only test counts. |
 | 9 | MINOR | Tie-breaker seed 43; top-20% count off by one in the text examples. | The tie-breaker stream is derived from seed 42. The examples use the same cutoff as `evaluate`. |
+
+### Round 3
+
+Same prompt, fresh subagent. Verdict: 0 BLOCKER, 1 MAJOR, 7 MINOR. This was the third and last round, and with no blocker the gate is cleared. The reviewer's own past-only recomputation matched all 15 numeric features and `prior_comments` on all 41,393 train and validation rows, all four fitted models refit to the saved predictions exactly, and no test-scoring code or file exists in any commit.
+
+| # | Tag | Finding | What we did |
+|---|---|---|---|
+| 1 | MAJOR | "M1 is not distinguishable from logistic regression" depended on the resample count: the interval's lower end sits on zero and the yes/no flag flipped in 4 of 6 settings. | Replaced the flag with three verdicts (beyond noise, borderline, within noise), raised paired resamples to 10,000, and wrote the wording rule into the frozen config. M1 against logistic regression now reads "borderline" (G2.9). |
+| 2 | MINOR | Test protocol not fully pinned: pooled or per year, no B0 row in the differences, uncommitted `impact.py`. | The config fixes "pooled headline plus per-year breakdown". B0 is in the differences table. `impact.py` is committed before the freeze. |
+| 3 | MINOR | Early stopping also watched log-loss. | `first_metric_only=True`. The selected settings did not change. |
+| 4 | MINOR | The notebook did not state M2's device noise. | Stated next to the ablation in notebook 03, and in the README. |
+| 5 | MINOR | Test-year fail rates printed in notebook 01. | The per-year table now stops at 2023. The split table keeps one line per split, as the brief asks. |
+| 6 | MINOR | B0's interval is that of the fail rate; the gains figure used one random tie-break. | Gains curves now use the expected value over ties, so B0 is the exact diagonal and B1's curve agrees with the table. |
+| 7 | MINOR | Three evidence standards for "keep it". | Notebook 03 says why the improvement loop's bar is higher. Model comparisons all use the three verdicts. |
+| 8 | MINOR | The test-run refit changes what "training rows" means for the PCA. | Notebook 04 asserts that nothing is fitted on a row dated 2024 or later. The config and README state the definition. |
+
+Gate 2 cleared. Settings frozen in `docs/FROZEN_CONFIG.json`.

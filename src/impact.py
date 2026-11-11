@@ -6,7 +6,7 @@ All functions take the true outcomes and the risk scores of a set of past inspec
 import numpy as np
 import pandas as pd
 
-from src.evaluate import K, _ranked, evaluate
+from src.evaluate import K, _expected_ranked, evaluate
 
 # Cost of a failure that goes undetected. We do not have a sourced figure, so these stay
 # None and the dollar lines are skipped. Never fill them with a guess.
@@ -32,7 +32,7 @@ def failures_found_per_year(y, score, inspections_per_year, k=K):
 
 def inspections_to_match(y, score_model, target_failures):
     """Smallest number of visits, in the model's risk order, that finds `target_failures` failures."""
-    found = np.cumsum(_ranked(y, score_model))
+    found = np.cumsum(_expected_ranked(y, score_model))
     return int(np.searchsorted(found, target_failures) + 1)
 
 
@@ -133,20 +133,32 @@ def next_inspection_rows(full, as_of, add_history_features, reinspection_days=30
 def _describe(feature, row):
     """One feature and its value, in words a manager can read."""
     v = row.get(feature)
+    missing = pd.isna(v)
     if feature == "prior_fail_rate":
-        return "no inspection history" if pd.isna(v) else f"failed {v:.0%} of past inspections"
+        return "no inspection history" if missing else f"failed {v:.0%} of all past visits"
+    if feature == "prior_routine_fail_rate":
+        return "no routine inspection on record" if missing else f"failed {v:.0%} of past routine inspections"
+    if feature == "last_routine_n_viol":
+        return "no routine inspection on record" if missing else f"{v:.0f} violations at the last routine inspection"
+    if feature == "last_routine_n_lvl3":
+        return "no routine inspection on record" if missing else f"{v:.0f} serious violations at the last routine inspection"
+    if feature == "last_routine_fail":
+        return "no routine inspection on record" if missing else (
+            "failed the last routine inspection" if v == 1 else "passed the last routine inspection")
     if feature == "last_fail":
-        return "no previous inspection" if pd.isna(v) else ("failed the previous inspection" if v == 1 else "passed the previous inspection")
-    if feature == "days_since_last":
-        return "never inspected before" if pd.isna(v) else f"{v:.0f} days since the last visit"
-    if feature == "license_age_days":
-        return f"license held for {v / 365.25:.1f} years"
-    if feature == "prior_n":
-        return f"{v:.0f} past inspections on record"
+        return "no previous visit" if missing else ("previous visit failed" if v == 1 else "previous visit passed")
     if feature == "last_n_viol":
-        return "no previous inspection" if pd.isna(v) else f"{v:.0f} violations at the previous visit"
+        return "no previous visit" if missing else f"{v:.0f} violations at the previous visit"
     if feature == "last_n_lvl3":
-        return "no previous inspection" if pd.isna(v) else f"{v:.0f} serious violations at the previous visit"
+        return "no previous visit" if missing else f"{v:.0f} serious violations at the previous visit"
+    if feature == "days_since_last":
+        return "never inspected before" if missing else f"{v:.0f} days since the last visit"
+    if feature == "license_age_days":
+        return f"on record for {v / 365.25:.1f} years"
+    if feature == "prior_n":
+        return f"{v:.0f} past visits on record"
+    if feature == "prior_n_3y":
+        return f"{v:.0f} visits in the last 3 years"
     if feature == "month":
         return f"time of year ({MONTH_NAMES[int(v) - 1]})"
     if feature == "is_takeout":

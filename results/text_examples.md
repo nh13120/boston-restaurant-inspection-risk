@@ -1,24 +1,26 @@
-# Failed inspections that the text model ranked much higher
+# Where the text model and the history model disagree most
 
-Validation year (2023). Each inspection failed. The text model (M2) placed it in its riskiest 10%, and the history-only model (M1) ranked it lower. The snippet is the inspector's comment from the previous visit, which is the only text the model sees. Personal details are masked.
+Validation year (2023). The text changes the ranking very little. Among the 526 failed inspections in the text model's riskiest 10%, the largest move up from the history-only ranking is 10.6 percentile points and the median move is 0.3. The two models' riskiest-20% lists share 1,004 of 1,105 inspections.
 
-## Example 1 (Roxbury)
+The three largest moves are below. 3 of the 3 were already in the history-only model's riskiest 20%, so the text did not change the decision to visit them. The snippet is the inspector's comment from the previous visit, the only text the model sees. Personal details are masked.
 
-- History-only model: riskier than 85% of inspections
-- History + text model: riskier than 90% of inspections
+## Example 1 (Hyde Park)
 
-> Containers of marinated raw meats stored above cooked chicken and ready to eat chopped tomatoes. Store raw meat below cooked ready to eat foods and produce. Corrected on site. | Soiled wiping cloths not stored in sanitizer. Store wiping cloths in sanitizer solution to prevent cross contamination. | Containers of prepped food in walk-in without date marking held over 24 hours. Date prepped foods he...
+- History-only model (M1): riskier than 80% of inspections
+- History + text model (M2): riskier than 91% of inspections
 
-## Example 2 (Boston)
+> Allergen certification for person in charge expired provide current certification. | Provide current parasite destruction letter from sushi fish proveer. | Clean sides inbetween cooking equipment to remove visible soil. | Toilet not flushing inside womens restroom repair. | Grease collector exterior soiled clean. | Clean floor below cooking equipment to remove visible soil. Replace cracked tiles a...
 
-- History-only model: riskier than 86% of inspections
-- History + text model: riskier than 91% of inspections
+## Example 2 (Dorchester)
 
-> Containers of raw chicken and beef stored over kimchi. Raw chicken at cook station next to ready to eat cucumber and jalapenos. Keep raw meats separate from ready to foods. Store raw meats below ready to eat foods to prevent contamination. | Blanched french fries stored on counter at 56F. Cooked rice stored on counter at 60F. Both items returned to cooler for storage. Store cooked foods under refr...
+- History-only model (M1): riskier than 82% of inspections
+- History + text model (M2): riskier than 91% of inspections
+
+> Raw whole eggs stored above cut vegetables and other foods.Must be on botton shelf. | Provide a sanitizer bucket for wiping clothes | Discontinue to store containers on the floor in the walk in. Must be 6 inches off the floor. Provide more shelves in two door refrigerator so food is not stacked on top on each other. | PIC will need to provide labels on ackaged food in the refrigerator in retail ar...
 
 ## Example 3 (Boston)
 
-- History-only model: riskier than 89% of inspections
-- History + text model: riskier than 93% of inspections
+- History-only model (M1): riskier than 84% of inspections
+- History + text model (M2): riskier than 93% of inspections
 
-> PIC needs to oversee the cleaning sanitizing and pest control issues and concerns of the restaurant in more detail - suggesting to designate a cleaning crew that will only clean wash dishes and to concontrate on the overall cleanliness of the restaurant | Ensure to keep all foods elevated off the floors during storage including dry foods as well as foods in the walk -in units | Several containers ...
+> No handwash sink in the lower dishroom.Provide proper handwash station....

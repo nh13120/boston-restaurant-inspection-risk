@@ -35,14 +35,14 @@ Source: [Food Establishment Inspections](https://data.boston.gov/dataset/food-es
 | `last_routine_n_viol` | int | Violations found at the last routine inspection. |
 | `last_routine_n_lvl3` | int | Level 3 violations found at the last routine inspection. |
 | `days_since_last` | int | Days since the previous inspection. |
-| `license_age_days` | int | Days since the license's first inspection on record, or since its issue date when that is earlier (D2.2). |
+| `license_age_days` | int | Days since the license's first inspection on record (D2.2). The license issue date is not used, because the source only keeps the current one. |
 | `month` | int | Calendar month of the inspection, 1 to 12. |
 | `is_takeout` | 0/1 | 1 if the establishment type is "Eating & Drinking w/ Take Out". |
 | `neighborhood` | text | Neighborhood from the `city` column. "Boston" covers downtown. |
 | `zip` | text | Zip code. |
-| `prior_comments` | text | Inspector comments from the previous inspection, personal details masked. Empty for a first inspection or when the previous visit had no comments. |
+| `prior_comments` | text | Inspector comments from the previous inspection. Personal details are masked on a best-effort basis (D2.5). Empty for a first inspection or when the previous visit had no comments. |
 
-`is_takeout`, `neighborhood` and `zip` are the values on the pull date. The source keeps one value per license.
+`is_takeout`, `neighborhood` and `zip` are the values on the pull date. The source keeps one value per license. For the same reason, the population is the licenses typed "Eating & Drinking" on the pull date.
 
 ## Outcome-side columns (never used as features)
 
@@ -50,9 +50,9 @@ These describe the inspection being predicted. They are kept to build the next r
 
 | Column | Type | Meaning |
 |---|---|---|
-| `n_viol`, `n_lvl1`, `n_lvl2`, `n_lvl3` | int | Violations found at this inspection, in total and by level (`*`, `**`, `***`). |
+| `n_viol`, `n_lvl1`, `n_lvl2`, `n_lvl3` | int | Violations found at this inspection, in total and by level (`*`, `**`, `***`). 251 failed inspections have a count of 0, because the source lists no violation rows for them. |
 | `n_rechecked_ok` | int | Earlier violations re-checked at this inspection and found corrected. |
-| `comments` | text | Inspector comments from this inspection, personal details masked. |
+| `comments` | text | Inspector comments from this inspection. Personal details are masked on a best-effort basis. |
 | `is_reinspection` | 0/1 | 1 if the previous inspection failed 30 days ago or less. Always 0 in the model table. |
 
 ## Descriptive columns

@@ -25,9 +25,10 @@ MODEL_COLORS = {
 }
 
 
-def _ranked(y, score, seed=SEED):
-    """Labels sorted from highest to lowest score. Ties are broken at random (fixed seed),
-    so a model that gives many rows the same score gets no credit from row order."""
+def _ranked(y, score, seed=SEED + 1):
+    """Labels sorted from highest to lowest score, for curves. Ties are broken at random with
+    their own fixed seed, so a model that gives many rows the same score gets no credit from
+    row order."""
     y, score = np.asarray(y), np.asarray(score, dtype=float)
     tie_breaker = np.random.default_rng(seed).random(len(y))
     order = np.lexsort((tie_breaker, -score))   # sort by -score, then by the tie breaker
@@ -35,14 +36,21 @@ def _ranked(y, score, seed=SEED):
 
 
 def evaluate(y, score, k=K):
-    """AUC plus the two capacity metrics at the top k share."""
-    y_sorted = _ranked(y, score)
-    n = len(y_sorted)
+    """AUC plus the two capacity metrics at the top k share.
+
+    When several inspections share the score at the cutoff, we take the expected number of
+    failures over every random way of breaking the tie. A rule with many tied scores (such as
+    B1) is then judged by its average, not by one lucky or unlucky draw.
+    """
+    y, score = np.asarray(y), np.asarray(score, dtype=float)
+    n = len(y)
     n_top = max(1, int(round(k * n)))
-    hits = y_sorted[:n_top].sum()
+    cutoff = np.sort(score)[::-1][n_top - 1]            # score of the last visit made
+    above, tied = score > cutoff, score == cutoff
+    hits = y[above].sum() + (n_top - above.sum()) * y[tied].mean()
     return {
         "auc": roc_auc_score(y, score),
-        "catch_at_k": hits / y_sorted.sum(),
+        "catch_at_k": hits / y.sum(),
         "precision_at_k": hits / n_top,
         "n": n,
     }
@@ -139,10 +147,13 @@ def self_test():
         assert abs(random["catch_at_k"] - K) < 0.02, random
         assert abs(random["precision_at_k"] - y.mean()) < 0.02, random
         assert abs(random["auc"] - 0.5) < 0.02
-    # A constant score must behave like a random one (ties broken at random, not by row order).
-    y_sorted_by_label = np.sort(y)[::-1]
-    constant = evaluate(y_sorted_by_label, np.zeros(len(y)))
-    assert abs(constant["precision_at_k"] - y.mean()) < 0.02, constant
+    # A constant score is the average random order: its hit rate must equal the fail rate exactly,
+    # whatever the row order.
+    constant = evaluate(np.sort(y)[::-1], np.zeros(len(y)))
+    assert abs(constant["precision_at_k"] - y.mean()) < 1e-12, constant
+    # Half the rows tied at the cutoff: the expected value sits between best and worst case.
+    y_small, tied_scores = np.array([1, 1, 0, 0, 1, 0, 0, 0, 0, 0]), np.array([9, 5, 5, 5, 5, 1, 1, 1, 1, 1.0])
+    assert abs(evaluate(y_small, tied_scores, k=0.3)["precision_at_k"] - (1 + 2 * 0.5) / 3) < 1e-12
     lo, hi = bootstrap_ci(y[:2000], rng.random(2000), "precision_at_k", n=100)
     assert lo < y.mean() < hi
     print("evaluate.py self-test passed: perfect score gives catch_at_k = min(1, k / base rate); "

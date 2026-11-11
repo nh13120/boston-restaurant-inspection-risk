@@ -70,6 +70,15 @@ _NOT_NAMES = {
     "Discard", "Store", "Label", "Cover", "Replace", "Install", "Wash", "Keep", "Use", "Ensure",
     "Observed", "Found", "Noted", "Missing", "Dirty", "Soiled", "Broken", "Corrected", "Informed",
     "Agreed", "Indicated", "Arrived", "Explained", "Claims", "Claimed", "Told", "States", "Says",
+    "He", "She", "They", "We", "You", "It", "Worker", "Workers", "Bartender", "Dishwasher", "Cashier", "Clerk",
+    "Attendant", "Custodian", "Janitor", "Technician", "Contractor", "Engineer", "Director", "Establishment",
+    "Facility", "Representative", "Rep", "Complainant", "Caller", "Customer", "Customers", "Patron", "Tenant",
+    "Neighbor", "Officer", "Cook", "Cooks", "Chefs", "Managers", "Owners", "Operators", "Driver", "Vendor",
+    "Supplier", "Company", "Someone", "Nobody", "Everyone", "One", "Both", "Each", "Per", "Mgr", "Sous",
+    "Corporate", "Maintenance", "Security", "Host", "Hostess", "Waiter", "Waitress", "Barista", "Baker",
+    "Products", "Maintain", "Upon", "Review", "Multiple", "Report", "Reports", "Discontinue", "Address",
+    "Certifications", "Make", "Voluntary", "Raw", "Documentation", "Facilities", "Paper", "Refrigeration",
+    "Corner", "Ice", "Repairman", "Took", "Bar", "Water",
 }
 # After a TITLE, two capitalized words are treated as a name. The broader ROLE words also start
 # ordinary phrases ("Employee Hand Sink"), so after them we only mask a known first name.
@@ -83,7 +92,7 @@ _ANY = r"[A-Za-z][A-Za-z'\-]+"                   # any case: for dictionary look
 _PERSON_VERB = (r"stated|states|said|says|indicated|informed|agreed|arrived|explained|claims|claimed|told|"
                 r"was present|is present|was not|is not|is certified|is the|was the|will|at time|on site|onsite")
 
-_HONORIFIC = re.compile(rf"(?i:\b(?:Mr|Mrs|Ms|Miss|Dr)\b\.?)\s+{_CAP}(?:\s+{_CAP})?")
+_HONORIFIC = re.compile(rf"(?i:\b(?:Mr|Mrs|Ms|Miss|Dr)\b\.?)\s+{_CAP}(?:\s+{_CAP})?|(?i:\b(?:mr|mrs|ms)\.)\s+{_ANY}")
 # "owner Jane Doe", "Commissioner John Roe", "GM(Jane Doe": a title, then two capitalized words.
 _TITLE_FULL = re.compile(rf"(?i:\b(?:{_TITLE_WORDS})\b(?:\s+is|\s+was|\s+named)?){_SEP}({_CAP})\s+({_CAP})")
 # "PIC and owner of restaurant: Jane Doe": a title, a few words, a colon, then two capitalized words.
@@ -98,6 +107,16 @@ _ROLE_FIRST = re.compile(rf"(?i:\b(?:{_ROLE_WORDS})\b(?:\s+is|\s+was|\s+named)?)
 # "spoke with Chris", "per John": one capitalized word is enough to be a name here.
 _SPOKE = re.compile(
     rf"(?i:\b(?:spoke|speak|spoken|speaking|talked|met|discussed)\s+(?:with|to)(?:\s+the)?|\bper)\s+({_CAP})(\s+{_CAP})?")
+# "PIC- Jane has an expired certificate", "Owner Jane": a title, then one capitalized word that is
+# not a known non-name word and not a verb form ("PIC Notified", "Manager Cleaning").
+_TITLE_ONE = re.compile(rf"(?i:\b(?:{_TITLE_WORDS})\b){_SEP}({_CAP})\b()(?!\s*:)")
+# "Jane stated that ...": a capitalized word right before a speech verb.
+_SPEAKER = re.compile(rf"\b({_CAP})()(?=\s+(?:stated|states|said|says)\b)")
+# "certificate needs to be in jane doe name": one to three words between "in" and "name", any case.
+_CERT_IN_NAME = re.compile(rf"(?i:certificat\w*[^.|]{{0,40}}?\bin\s+)((?:{_ANY}\s+){{1,3}})(?=(?i:name)\b)")
+_NOT_A_HOLDER = {"the", "owner", "owners", "owner's", "his", "her", "their", "pic", "pic's", "manager", "manager's",
+                 "employee", "employee's", "employees", "another", "different", "someone", "else's", "current",
+                 "a", "an", "restaurant", "establishment", "business", "company", "corporate", "same", "that", "this"}
 # "spoke with maria": the same context, with a known first name in any case.
 _SPOKE_FIRST = re.compile(
     rf"(?i:\b(?:spoke|speak|spoken|speaking|talked|met|discussed)\s+(?:with|to)(?:\s+the)?)\s+({_ANY})\b()")
@@ -107,6 +126,8 @@ _CERT = re.compile(
     rf"(?i:\b(?:for|belongs to|issued to|in the name of|held by|name of)\b)\s*[:\-]?\s*({_ANY})\s+({_ANY})")
 # "Jane Doe is the certified food protection manager"
 _BEFORE_ROLE = re.compile(rf"\b({_CAP})\s+({_CAP})(?=\s+(?i:is|was)\s+(?i:the\s+|a\s+)?(?i:certified|cfpm|owner|manager|pic|person in charge))")
+# "refer to Jane Doe BFD": two capitalized words right before a city department's initials.
+_BEFORE_DEPT = re.compile(rf"\b({_CAP})\s+({_CAP})(?=\s+(?:BFD|ISD)\b)")
 # "stated by Scott Doe", "and Wayne Doe": a linking word, then a first name and a second word.
 _LINK_FULL = re.compile(rf"(?i:\b(?:stated(?:\s+by)?|by|and|with|told|from)\s+)({_CAP})\s+({_CAP})")
 # "Jane Doe" or "JANE DOE" anywhere. The pattern starts at the first name itself; a generic
@@ -138,6 +159,22 @@ def _mask_two(m):
     return m.group(0) if _not_a_name(m) else _masked(m)
 
 
+def _mask_one(m):
+    """Mask one capitalized word after a title or before a speech verb, unless it is a known
+    non-name word or looks like a verb form."""
+    word = m.group(1)
+    if word.title() in _NOT_NAMES or re.search(r"(?:ed|ing|ly)$", word):
+        return m.group(0)
+    return _masked(m)
+
+
+def _mask_cert_holder(m):
+    """'certificate ... in <words> name': mask the words unless they describe a role ("the owner's")."""
+    if any(w.lower() in _NOT_A_HOLDER for w in m.group(1).split()):
+        return m.group(0)
+    return m.group(0)[: m.start(1) - m.start(0)] + "[NAME] "
+
+
 def _mask_if_first_name(m):
     """Mask only when the first captured word is a known first name."""
     return _masked(m) if m.group(1).title() in FIRST_NAMES and not _not_a_name(m) else m.group(0)
@@ -164,10 +201,14 @@ def mask_personal_info(text):
         text = rx.sub(_mask_if_first_name, text)
     # _TITLE_FULL runs twice: in "manager Assistant Commissioner Jane Doe" the first pass stops
     # at "manager Assistant Commissioner" and only the second reaches the name.
-    for rx in (_CERT, _TITLE_FULL, _TITLE_FULL, _TITLE_COLON, _TITLE_OF, _TITLE_VERB, _BEFORE_ROLE, _SPOKE):
+    for rx in (_CERT, _TITLE_FULL, _TITLE_FULL, _TITLE_COLON, _TITLE_OF, _TITLE_VERB, _BEFORE_ROLE, _BEFORE_DEPT, _SPOKE):
         text = rx.sub(_mask_two, text)
     for rx in (_LINK_FULL, _ROLE_FIRST, _SPOKE_FIRST):
         text = rx.sub(_mask_if_context_first_name, text)
+    for rx in (_TITLE_ONE, _SPEAKER):
+        text = rx.sub(_mask_one, text)
+    text = _CERT_IN_NAME.sub(_mask_cert_holder, text)
+    text = re.sub(r"\S+@\[EMAIL\]", "[EMAIL]", text)      # a local part left in front of a masked address
     # "Jane Marie Doe" leaves "[NAME] Doe": absorb a capitalized word right after a mask.
     return _AFTER_MASK.sub(lambda m: m.group(0) if m.group(1).title() in _NOT_NAMES else "[NAME]", text)
 
@@ -301,12 +342,10 @@ def add_history_features(insp, cutoff_days=REINSPECTION_DAYS):
     df["prior_routine_fail_rate"] = (df["label_fail"].where(routine).groupby(lic)
                                      .transform(lambda s: s.shift(1).expanding().mean()))
 
-    # License age. The issue date in the snapshot is the CURRENT one and can be later than
-    # an old inspection (re-issued licenses, pre-opening visits). To avoid using a future
-    # date, the clock starts at the earlier of the issue date and the first inspection we see.
-    first_seen = g["date"].transform("min")
-    start = df["license_issue_date"].where(df["license_issue_date"] <= first_seen, first_seen)
-    df["license_age_days"] = (df["date"] - start.fillna(first_seen)).dt.days
+    # "License age" is measured from the first inspection on record. The issue date in the
+    # snapshot is the CURRENT one: for 9 licenses in 10 it is later than their first inspection
+    # (re-issued licenses), so using it would bring a future date into old rows.
+    df["license_age_days"] = (df["date"] - g["date"].transform("min")).dt.days
 
     df["month"] = df["date"].dt.month
     df["year"] = df["date"].dt.year

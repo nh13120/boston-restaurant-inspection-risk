@@ -40,3 +40,36 @@ Same reviewer prompt, fresh subagent. Verdict: 0 BLOCKER, 1 MAJOR, 6 MINOR. The 
 | 7 | MINOR | "Pass" means "no follow-up required", not "no violations". | Stated in the data dictionary, and in the README. |
 
 Deliberately left: the 30-day rule and the label definition, which the brief fixes.
+
+### Round 3
+
+Same prompt, fresh subagent. Verdict: 0 BLOCKER, 0 MAJOR, 7 MINOR. Gate 1 passed. The reviewer matched 22 numeric columns, the categorical columns and both comment columns on all 58,564 model rows and all 161,962 inspections, rebuilt both saved tables exactly, and verified the snapshot hash.
+
+| # | Tag | Finding | What we did |
+|---|---|---|---|
+| 1 | MINOR | About 62 comments still carry a name (first names after a role word, "X stated", lower-case names around certificates). Tracked files are clean. | Added those three contexts, a lower-case honorific and a fix for a half-masked email. The dictionary now says "best effort". `data/` stays unpublished. |
+| 2 | MINOR | Late follow-up visits remain in the model table (1,807 rows). | Limitation. Notebook 04 reports results without them. |
+| 3 | MINOR | Notebook 01 prints the fail rate of the test years. | Left: the brief asks for the fail rate per split and per year. Added a note that these are label summaries and no decision uses them. |
+| 4 | MINOR | One prior comment looks edited after the predicted inspection. | Limitation (G1.7). |
+| 5 | MINOR | The "Eating & Drinking" filter is the license type on the pull date. | Stated in the data dictionary. |
+| 6 | MINOR | Exact reproduction needs the original snapshot; Python version not recorded. | Stated in the README. |
+| 7 | MINOR | 251 failed inspections have a violation count of 0. | Stated in the data dictionary. |
+
+## Gate 2: methodology review
+
+### Round 1
+
+Verdict: 0 BLOCKER, 4 MAJOR, 6 MINOR. No leakage found: all 15 numeric features and `prior_comments` are identical for the 41,393 train and validation rows when every 2024+ row is removed first. No test file or test-period metric exists. The reviewer reproduced B1 and M1's validation metrics to four decimals.
+
+| # | Tag | Finding | What we did |
+|---|---|---|---|
+| 1 | MAJOR | B1 was handicapped: first inspections got the routine fail rate (0.60), above 96% of real `prior_fail_rate` values, so all of them landed in B1's top 20%. Fair value on validation is 80.4%, not 68.9%. | Fallback is now the mean `prior_fail_rate` of the fitting rows. `evaluate()` takes the expected value over ties (G2.1, G2.2). |
+| 2 | MAJOR | M2 is not reproducible across devices, and its selected settings flip on float noise. | Pinned the encoder revision. Documented the device caveat in the config, DECISIONS and README. M1, the final model, is unaffected (G2.4). |
+| 3 | MAJOR | The settings to be frozen named no model to deploy, no fitting rows and no comparisons, and M1 was never tested against B2. | Added a pre-specified parsimony rule and the paired comparisons to notebook 03 and to the config (G2.3). |
+| 4 | MAJOR | `text_examples.md` said "ranked much higher"; the largest move was about 5 points. | Rewritten with the measured moves and the overlap of the two top-20% lists (G2.5). |
+| 5 | MINOR | Validation numbers of M1 and M2 are post-selection. | Stated in notebook 03. |
+| 6 | MINOR | `license_age_days` switched on a pull-date value for 5% of rows. | Now counted from the first inspection on record only (D2.2). |
+| 7 | MINOR | Notebook 01 prints test-year fail rates. | Left, with a note (see Gate 1 round 3, finding 3). |
+| 8 | MINOR | B0 is one random draw and shared its random stream with the tie-breaker. | Ties no longer use a random draw in the metrics; curves use their own seed. B0 stays one random draw, as the brief asks, and the notebooks state that its expected hit rate is the fail rate. |
+| 9 | MINOR | Late re-inspections remain in the table. | Limitation, as above. |
+| 10 | MINOR | "12 history features" in a notebook text; there are 17. | Fixed. |

@@ -59,9 +59,16 @@ def score_random(df, seed=SEED):
     return np.random.default_rng(seed).random(len(df))
 
 
+def past_fail_rate_fallback(fit_rows):
+    """Score for a restaurant with no history: the average past failure rate of the fitting rows.
+    It must be on the same scale as prior_fail_rate (which counts re-inspections, so it averages
+    about 0.37). The routine fail rate (about 0.60) would put every new restaurant at the top."""
+    return float(fit_rows["prior_fail_rate"].mean())
+
+
 def score_past_fail_rate(df, fallback):
     """B1: rank by the share of past inspections failed. A first inspection has no past,
-    so it gets `fallback` (the base rate of the fitting data)."""
+    so it gets `fallback` (see past_fail_rate_fallback)."""
     return df["prior_fail_rate"].fillna(fallback).to_numpy()
 
 

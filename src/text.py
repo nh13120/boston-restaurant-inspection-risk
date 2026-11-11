@@ -16,6 +16,7 @@ from transformers import AutoModel, AutoTokenizer
 
 SEED = 42
 MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+MODEL_REVISION = "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"   # pinned, so a later upload cannot change the vectors
 MAX_TOKENS = 256
 N_COMPONENTS = 32
 PC_COLUMNS = [f"text_pc{i + 1:02d}" for i in range(N_COMPONENTS)]
@@ -32,8 +33,8 @@ def embed_texts(texts, max_tokens=MAX_TOKENS, batch_size=64, device=None, verbos
     device = device or get_device()
     texts = pd.Series(list(texts), dtype="object").fillna("")
     unique = sorted({t for t in texts if t.strip()}, key=len)   # by length: batches pad less
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-    encoder = AutoModel.from_pretrained(MODEL_NAME).to(device).eval()
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, revision=MODEL_REVISION)
+    encoder = AutoModel.from_pretrained(MODEL_NAME, revision=MODEL_REVISION).to(device).eval()
     dim = encoder.config.hidden_size
 
     vectors = {}

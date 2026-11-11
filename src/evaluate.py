@@ -13,11 +13,19 @@ K = 0.20   # ISD capacity: visit the riskiest 20% first
 
 # One display name and one colour per model, shared by every figure.
 MODEL_LABELS = {
-    "B0_random": "Random order (today)",
-    "B1_past_fail_rate": "Past failure rate (rule)",
+    "B0_random": "Random order (assumed status quo)",
+    "B1_past_fail_rate": "Past failure rate (simple rule)",
     "B2_logreg": "Logistic regression",
     "M1_lgbm": "LightGBM, history",
     "M2_lgbm_text": "LightGBM, history + text",
+}
+# Plain names for slides. "\n" keeps bar labels narrow.
+FIGURE_LABELS = {
+    "B0_random": "Random order\n(assumed status quo)",
+    "B1_past_fail_rate": "Simple rule:\npast failure rate",
+    "B2_logreg": "Simple statistical\nmodel",
+    "M1_lgbm": "Machine-learning\nmodel",
+    "M2_lgbm_text": "Machine learning +\ninspector comments",
 }
 MODEL_COLORS = {
     "B0_random": "#9a9a9a", "B1_past_fail_rate": "#dd8452", "B2_logreg": "#8172b3",
@@ -178,24 +186,31 @@ def set_plot_style():
     })
 
 
-def plot_gains(y, scores, title, path=None, k=K):
-    """Gains curves for several models. `scores` = {model name: score array}."""
+def plot_gains(y, scores, title, path=None, k=K, highlight=None):
+    """Gains curves. `scores` = {model name: score array}. `highlight` names the model whose
+    value at capacity k is called out in words."""
     set_plot_style()
     fig, ax = plt.subplots(figsize=(9, 6))
     for name, score in scores.items():
         curve = gains_curve(y, score)
         ax.plot(curve["share_inspected"] * 100, curve["share_failures_caught"] * 100,
-                label=MODEL_LABELS.get(name, name), color=MODEL_COLORS.get(name),
-                linewidth=2.5 if name.startswith("M") else 1.8,
+                label=FIGURE_LABELS.get(name, name).replace("\n", " "), color=MODEL_COLORS.get(name),
+                linewidth=3 if name == highlight else 1.8,
                 linestyle="--" if name == "B0_random" else "-")
     ax.axvline(k * 100, color="black", linestyle=":", linewidth=1.2)
-    ax.text(k * 100 + 1, 3, f"Capacity: {k:.0%} of inspections", fontsize=11)
-    ax.set_xlabel("Share of inspections made, riskiest first (%)")
-    ax.set_ylabel("Share of all failures found (%)")
+    if highlight:
+        caught = evaluate(y, scores[highlight], k)["catch_at_k"] * 100
+        ax.annotate(f"First {k:.0%} of visits:\n{caught:.0f}% of failures found\n({k:.0%} in random order)",
+                    xy=(k * 100, caught), xytext=(k * 100 + 16, caught - 22), fontsize=13, fontweight="bold",
+                    color=MODEL_COLORS.get(highlight), arrowprops=dict(arrowstyle="->", color=MODEL_COLORS.get(highlight)))
+    else:
+        ax.text(k * 100 + 1, 3, f"Capacity: {k:.0%} of inspections", fontsize=11)
+    ax.set_xlabel("Share of the year's inspections made, riskiest first (%)")
+    ax.set_ylabel("Share of the year's failed inspections found (%)")
     ax.set_title(title)
     ax.set_xlim(0, 100)
     ax.set_ylim(0, 100)
-    ax.legend(loc="lower right", frameon=False)
+    ax.legend(loc="upper left", frameon=False)      # the corner above the curves is always empty
     fig.tight_layout()
     if path:
         fig.savefig(path)
@@ -271,43 +286,45 @@ FEATURE_LABELS = {
 }
 
 
-def plot_hit_rate_bar(results, title, path=None, base_rate=None, k=K):
-    """Hit rate at capacity k for each model, with 95% bootstrap intervals. `results` = results_table output."""
+def plot_hit_rate_bar(results, title, path=None, base_rate=None, k=K, final=None):
+    """Hit rate at capacity k for each model, with 95% bootstrap ranges. `results` = results_table output."""
     set_plot_style()
-    fig, ax = plt.subplots(figsize=(9, 5.5))
+    fig, ax = plt.subplots(figsize=(9.5, 5.8))
     names = list(results["model"])
     hit = results["precision_at_k"].to_numpy() * 100
     err = np.vstack([hit - results["precision_at_k_lo"].to_numpy() * 100,
                      results["precision_at_k_hi"].to_numpy() * 100 - hit])
-    bars = ax.bar([MODEL_LABELS.get(n, n).replace(", ", ",\n").replace(" (", "\n(") for n in names], hit,
-                  yerr=err, capsize=5, color=[MODEL_COLORS.get(n, "#4c72b0") for n in names])
+    labels = [FIGURE_LABELS.get(n, n) + ("\n(chosen)" if n == final else "") for n in names]
+    bars = ax.bar(labels, hit, yerr=err, capsize=5, color=[MODEL_COLORS.get(n, "#4c72b0") for n in names],
+                  edgecolor=["black" if n == final else "none" for n in names], linewidth=2.5)
     for bar, value, high in zip(bars, hit, results["precision_at_k_hi"].to_numpy() * 100):
         ax.text(bar.get_x() + bar.get_width() / 2, high + 1.5, f"{value:.0f}%", ha="center", fontsize=14, fontweight="bold")
-    if base_rate is not None:
-        ax.axhline(base_rate * 100, color="black", linestyle=":", linewidth=1.2)
-        ax.text(len(names) - 0.5, base_rate * 100 - 4, f"Overall fail rate {base_rate:.0%}", ha="right", fontsize=11)
-    ax.set_ylabel(f"Visits that find a failure (%)")
-    ax.set_ylim(0, 105)
+    ax.set_ylabel("Visits that find a failure (%)")
+    ax.set_ylim(0, 108)
     ax.set_title(title)
     ax.tick_params(axis="x", labelsize=11)
+    ax.text(0.0, -0.27, f"First {k:.0%} of the test period's inspections, riskiest first. "
+                         "Thin lines on the bars show 95% ranges.", transform=ax.transAxes, fontsize=11)
     fig.tight_layout()
     if path:
-        fig.savefig(path)
+        fig.savefig(path, bbox_inches="tight")
     return fig
 
 
-def plot_importance(importance, title, path=None):
-    """Horizontal bars of the top features. `importance` = models.importance_table output."""
+def plot_importance(importance, title, path=None, top=8):
+    """Horizontal bars of the inputs the model uses most. `importance` = models.importance_table output."""
     set_plot_style()
-    imp = importance.iloc[::-1]
+    imp = importance.head(top).iloc[::-1]
     labels = [FEATURE_LABELS.get(f, f.replace("text_pc", "Comment text, component ")) for f in imp["feature"]]
-    fig, ax = plt.subplots(figsize=(9, 0.42 * len(imp) + 1.8))
+    fig, ax = plt.subplots(figsize=(9, 0.5 * len(imp) + 2.2))
     ax.barh(labels, imp["share_of_gain"] * 100, color="#4c72b0")
     for y, value in enumerate(imp["share_of_gain"] * 100):
-        ax.text(value + 0.5, y, f"{value:.0f}%" if value >= 1 else "<1%", va="center", fontsize=11)
-    ax.set_xlabel("Share of the model's predictive power (%)")
+        ax.text(value + 0.5, y, f"{value:.0f}%" if value >= 1 else "<1%", va="center", fontsize=12)
+    ax.set_xlabel("Share of the model's use of each input (%)")
     ax.set_title(title)
+    ax.text(0.0, -0.24, "Inputs the model relies on most. They are signals, not causes.",
+            transform=ax.transAxes, fontsize=11)
     fig.tight_layout()
     if path:
-        fig.savefig(path)
+        fig.savefig(path, bbox_inches="tight")
     return fig

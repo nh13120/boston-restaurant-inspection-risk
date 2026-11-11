@@ -1,11 +1,14 @@
-quantity,value,unit,how_computed
-Routine inspections per year,6007.38290229885,inspections,"17,171 test inspections over 2.86 years"
-Fail rate in the test period,0.590006406149904,share,share of test inspections that failed
-Visits per year at 20% capacity,1201.47658045977,inspections,20% x inspections per year
-"Failures found per year, random order",708.8788793103448,failures,fail rate x visits (expected value of a random order)
-"Failures found per year, past-failure-rate rule (B1)",964.1903030846453,failures,B1 test hit rate x visits
-"Failures found per year, M1_lgbm",1058.377011034014,failures,M1_lgbm test hit rate x visits
-Extra failures found per year vs. random order,349.4981317236692,failures,difference of the two lines above
-Extra failures found per year vs. the rule (B1),94.18670794936872,failures,difference of the two lines above
-Inspections saved per year to match the rule (B1),116.15229885057471,inspections,"M1_lgbm needs 3,102 test visits to find the 2756 failures B1 finds in 3,434"
-"Weeks earlier a failing restaurant is visited, on average",1.1142885344839741,weeks,"risk order within each of 12 calendar quarters, actual visit slots kept; 10,131 failed inspections"
+quantity,value,ci_lo,ci_hi,how_computed
+Routine inspections per year,6007.38290229885,,,"17,171 test inspections over 2.86 years"
+Fail rate in the test period,0.590006406149904,,,share of test inspections that failed
+"Failed inspections per year in total, in any visit order",3544.394396551724,,,fail rate x inspections per year; visiting in a different order does not change this total
+Visits per year in the first 20%,1201.47658045977,,,20% x inspections per year
+"Failed inspections found per year in the first 20% of visits, random order",708.8788793103448,,,fail rate x visits (average over all random orders; ASSUMES today's schedule is no better than random)
+"Failed inspections found per year in the first 20% of visits, past-failure-rate rule (B1)",964.1903030846453,,,B1 test hit rate x visits
+"Failed inspections found per year in the first 20% of visits, M1_lgbm",1058.377011034014,,,M1_lgbm test hit rate x visits
+Extra failed inspections found per year in the first 20% of visits vs. random order,349.4981317236692,333.42066409801106,364.2814756133392,"difference of the lines above: failures found EARLIER, not additional failures"
+Extra failed inspections found per year in the first 20% of visits vs. the rule (B1),94.18670794936872,78.6375698527329,109.19118184964644,"difference of the lines above: failures found EARLIER, not additional failures"
+Inspections saved per year to match the rule (B1),116.15229885057471,,,"M1_lgbm needs 3,102 test visits to find the 2756 failures B1 finds in 3,434"
+"Hit rate of the visits ISD actually made first (first 20% of each quarter, by date)",0.6163705214098456,,,a rough picture of today's order; seasonality within a quarter can also move it
+Extra failed inspections found per year in the first 20% of visits vs. ISD's actual order,323.03026034499504,,,"(M1_lgbm ranked within each quarter, hit rate 0.885, minus the line above) x visits"
+"Weeks earlier a visit that ends in a failure happens, on average",1.1142885344839741,,,"risk order within each of 12 calendar quarters, actual visit slots kept; 10,131 failed inspections. Visits that end in a pass move 1.6 weeks later. The number grows with the window: 0.4 weeks within months, 4.4 within years"

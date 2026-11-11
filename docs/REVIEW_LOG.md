@@ -106,3 +106,26 @@ Same prompt, fresh subagent. Verdict: 0 BLOCKER, 1 MAJOR, 7 MINOR. This was the 
 | 8 | MINOR | The test-run refit changes what "training rows" means for the PCA. | Notebook 04 asserts that nothing is fitted on a row dated 2024 or later. The config and README state the definition. |
 
 Gate 2 cleared. Settings frozen in `docs/FROZEN_CONFIG.json`.
+
+## Gate 3: results and impact critic
+
+### Round 1
+
+Verdict: 0 BLOCKER, 2 MAJOR, 10 MINOR. The reviewer reproduced every number in `results/*.csv`, the README and the four figures from `preds/` and the labels with independent code, refitted M1 from the frozen settings and matched the saved test predictions exactly, and found no dollar figures and no tuning on the test years.
+
+| # | Tag | Finding | What we did |
+|---|---|---|---|
+| 1 | MAJOR | "More failures found" read as net new failures, but the yearly total (about 3,544) is the same in any order. The 349 is a timing gain within the first 20% of visits. | Retitled the figure, renamed the `impact.csv` rows, added the unchanged total to the figure, the table and the README (G3.1). |
+| 2 | MAJOR | "Random order (today)" was shown as fact. It is an assumption, and the visits ISD actually made first failed 61.7% of the time, not 59.0%. | Relabelled as "assumed status quo", stated in the README limitations, and added the actual-order comparison (+323) to `impact.csv` (G3.2). |
+| 3 | MINOR | M2's lead over M1 on test was soft-pedalled. | The README and notebook now say: 0.7 points ahead, beyond noise by the frozen rule, borderline across seeds, about twice its device noise, kept M1 because the choice was fixed on validation. |
+| 4 | MINOR | Impact numbers had no uncertainty, and 94 is the top of a range. | Intervals in `impact.csv`; README quotes 40 to 95 (G3.3). |
+| 5 | MINOR | "1.1 weeks sooner" omitted its mirror image and its dependence on the window. | Both are in `impact.csv` (G3.3). |
+| 6 | MINOR | The top 20% is mostly repeat visits; per restaurant the lead over B1 is 3.3 points. | Added the slice to `robustness.csv` and the README. Wording says "failed inspections" and "visits", not "failing restaurants". |
+| 7 | MINOR | Gains chart not a 5-second read. | Three curves, one callout, plain names. |
+| 8 | MINOR | Hit-rate chart had jargon and an overlapping label. | Plain names, the chosen model outlined, a note on the 95% ranges, the overlapping label removed. |
+| 9 | MINOR | Importance chart overstated what it measures. | Top 8 inputs, axis "share of the model's use of each input", note "signals, not causes". |
+| 10 | MINOR | Priority-list drivers included counter-intuitive and location-based reasons. | Column renamed `top_3_model_factors`, nonsense factors skipped, location flagged in the README and notebook (G3.4). |
+| 11 | MINOR | README said "scored once"; notebook 04 ran more than once. | Reworded. D6.3 explains that reruns changed presentation and added robustness rows, with identical predictions. |
+| 12 | MINOR | Interval ends quoted to 0.1 point from 500 resamples. | README rounds interval ends to whole points. |
+
+Deliberately left: location stays in the model (changing inputs after the test would break the freeze), with a recommendation to ISD.

@@ -36,32 +36,55 @@ def inspections_to_match(y, score_model, target_failures):
     return int(np.searchsorted(found, target_failures) + 1)
 
 
+def first_visits_hit_rate(dates, y, score=None, k=K, window="Q"):
+    """Hit rate of the first k share of visits in each window (calendar quarter).
+
+    With `score=None` the first visits are the ones ISD actually made first (by date): a rough
+    picture of today's order. With a score, they are the riskiest k share of that window.
+    """
+    df = pd.DataFrame({"date": pd.to_datetime(pd.Series(dates)).to_numpy(), "y": np.asarray(y, dtype=float)})
+    df["rank_by"] = df["date"].rank(method="first") if score is None else -np.asarray(score, dtype=float)
+    hits = visits = 0.0
+    for _, w in df.groupby(df["date"].dt.to_period(window)):
+        n_top = int(round(k * len(w)))
+        if score is None:
+            hits += w.sort_values("date", kind="stable")["y"].head(n_top).sum()
+        else:
+            hits += evaluate(w["y"].to_numpy(), -w["rank_by"].to_numpy(), k)["precision_at_k"] * n_top
+        visits += n_top
+    return hits / visits
+
+
 def weeks_earlier(dates, y, score, window="Q"):
     """Time to discovery.
 
     Keep the number of inspections ISD actually made each week, but within each window
     (calendar quarter by default) hand out the visit slots in risk order instead of the
-    actual order. Returns how many weeks earlier a failing restaurant is visited, on average.
+    actual order. Returns how many weeks earlier a visit that ends in a failure happens, on
+    average, and how many weeks later a visit that ends in a pass happens.
 
     Assumption: the outcome of a visit does not depend on which week of the window it happens.
     """
     df = pd.DataFrame({"date": pd.to_datetime(pd.Series(dates)).to_numpy(), "y": np.asarray(y),
                        "score": np.asarray(score, dtype=float)})
     df["window"] = df["date"].dt.to_period(window)
-    shifts = []
+    gained = []
     for _, w in df.groupby("window"):
         actual_slots = np.sort(w["date"].to_numpy())                 # the visit slots that existed
         by_risk = w.sort_values("score", ascending=False, kind="stable")
         new_date = pd.Series(actual_slots, index=by_risk.index)       # riskiest gets the earliest slot
-        days_gained = (w["date"] - new_date.loc[w.index]).dt.days
-        shifts.append(days_gained[w["y"] == 1])
-    gained = pd.concat(shifts)
-    return {"mean_weeks_earlier_failures": gained.mean() / 7, "median_weeks_earlier_failures": gained.median() / 7,
-            "n_failures": int(len(gained)), "n_windows": int(df["window"].nunique())}
+        gained.append((w["date"] - new_date.loc[w.index]).dt.days)
+    gained = pd.concat(gained)
+    fails, passes = gained[df["y"] == 1], gained[df["y"] == 0]
+    return {"mean_weeks_earlier_failures": fails.mean() / 7, "median_weeks_earlier_failures": fails.median() / 7,
+            "mean_weeks_later_passes": -passes.mean() / 7,
+            "n_failures": int(len(fails)), "n_windows": int(df["window"].nunique())}
 
 
-def impact_table(y, dates, scores, best, k=K):
-    """One tidy table of impact numbers. `scores` = {model name: test scores}; `best` = name of the model to deploy."""
+def impact_table(y, dates, scores, best, k=K, diff_ci=None):
+    """One tidy table of impact numbers. `scores` = {model name: test scores}; `best` = the final model.
+    `diff_ci` = {other model: (low, high)} for the hit-rate difference best minus other, to carry
+    the uncertainty over to the yearly counts."""
     y = np.asarray(y)
     per_year, years = yearly_volume(dates)
     visits = k * per_year
@@ -70,33 +93,53 @@ def impact_table(y, dates, scores, best, k=K):
     # Random order: averaged over every possible random order, the hit rate equals the fail rate.
     found_random = fail_rate * visits
 
-    # Inspections needed by the best model to find what the rule (B1) finds with the full capacity.
+    # Inspections needed by the final model to find what the rule (B1) finds with the full capacity.
     n_test_capacity = int(round(k * len(y)))
     b1_found_in_test = evaluate(y, scores["B1_past_fail_rate"], k)["precision_at_k"] * n_test_capacity
     needed_in_test = inspections_to_match(y, scores[best], b1_found_in_test)
     saved_per_year = (n_test_capacity - needed_in_test) / years
 
+    # A rough picture of today's order: the visits ISD actually made first in each quarter.
+    actual_first = first_visits_hit_rate(dates, y, None, k)
+    model_in_quarters = first_visits_hit_rate(dates, y, scores[best], k)
+
+    first = f"in the first {k:.0%} of visits"
     rows = [
-        ("Routine inspections per year", per_year, "inspections", f"{len(y):,} test inspections over {years:.2f} years"),
-        ("Fail rate in the test period", fail_rate, "share", "share of test inspections that failed"),
-        (f"Visits per year at {k:.0%} capacity", visits, "inspections", f"{k:.0%} x inspections per year"),
-        ("Failures found per year, random order", found_random, "failures", "fail rate x visits (expected value of a random order)"),
-        ("Failures found per year, past-failure-rate rule (B1)", found["B1_past_fail_rate"], "failures", "B1 test hit rate x visits"),
-        (f"Failures found per year, {best}", found[best], "failures", f"{best} test hit rate x visits"),
-        ("Extra failures found per year vs. random order", found[best] - found_random, "failures", "difference of the two lines above"),
-        ("Extra failures found per year vs. the rule (B1)", found[best] - found["B1_past_fail_rate"], "failures", "difference of the two lines above"),
-        ("Inspections saved per year to match the rule (B1)", saved_per_year, "inspections",
+        ("Routine inspections per year", per_year, f"{len(y):,} test inspections over {years:.2f} years"),
+        ("Fail rate in the test period", fail_rate, "share of test inspections that failed"),
+        ("Failed inspections per year in total, in any visit order", fail_rate * per_year,
+         "fail rate x inspections per year; visiting in a different order does not change this total"),
+        (f"Visits per year in the first {k:.0%}", visits, f"{k:.0%} x inspections per year"),
+        (f"Failed inspections found per year {first}, random order", found_random,
+         "fail rate x visits (average over all random orders; ASSUMES today's schedule is no better than random)"),
+        (f"Failed inspections found per year {first}, past-failure-rate rule (B1)", found["B1_past_fail_rate"],
+         "B1 test hit rate x visits"),
+        (f"Failed inspections found per year {first}, {best}", found[best], f"{best} test hit rate x visits"),
+        (f"Extra failed inspections found per year {first} vs. random order", found[best] - found_random,
+         "difference of the lines above: failures found EARLIER, not additional failures"),
+        (f"Extra failed inspections found per year {first} vs. the rule (B1)", found[best] - found["B1_past_fail_rate"],
+         "difference of the lines above: failures found EARLIER, not additional failures"),
+        ("Inspections saved per year to match the rule (B1)", saved_per_year,
          f"{best} needs {needed_in_test:,} test visits to find the {b1_found_in_test:.0f} failures B1 finds in {n_test_capacity:,}"),
+        (f"Hit rate of the visits ISD actually made first (first {k:.0%} of each quarter, by date)", actual_first,
+         "a rough picture of today's order; seasonality within a quarter can also move it"),
+        (f"Extra failed inspections found per year {first} vs. ISD's actual order", (model_in_quarters - actual_first) * visits,
+         f"({best} ranked within each quarter, hit rate {model_in_quarters:.3f}, minus the line above) x visits"),
     ]
-    out = pd.DataFrame(rows, columns=["quantity", "value", "unit", "how_computed"])
+    out = pd.DataFrame(rows, columns=["quantity", "value", "how_computed"])
+    out["ci_lo"], out["ci_hi"] = np.nan, np.nan
+    for other, label in [("B0_random", "vs. random order"), ("B1_past_fail_rate", "vs. the rule (B1)")]:
+        if diff_ci and other in diff_ci:
+            row = out["quantity"].str.startswith("Extra failed") & out["quantity"].str.endswith(label)
+            out.loc[row, ["ci_lo", "ci_hi"]] = [diff_ci[other][0] * visits, diff_ci[other][1] * visits]
 
     if COST_PER_FAILURE_LOW is not None and COST_PER_FAILURE_HIGH is not None:
         extra = found[best] - found_random
-        out.loc[len(out)] = ("Value of extra failures found per year vs. random, low", extra * COST_PER_FAILURE_LOW,
-                             "dollars", "extra failures x COST_PER_FAILURE_LOW")
-        out.loc[len(out)] = ("Value of extra failures found per year vs. random, high", extra * COST_PER_FAILURE_HIGH,
-                             "dollars", "extra failures x COST_PER_FAILURE_HIGH")
-    return out
+        out.loc[len(out)] = ("Value of failed inspections found earlier per year vs. random, low",
+                             extra * COST_PER_FAILURE_LOW, "extra failures x COST_PER_FAILURE_LOW", np.nan, np.nan)
+        out.loc[len(out)] = ("Value of failed inspections found earlier per year vs. random, high",
+                             extra * COST_PER_FAILURE_HIGH, "extra failures x COST_PER_FAILURE_HIGH", np.nan, np.nan)
+    return out[["quantity", "value", "ci_lo", "ci_hi", "how_computed"]]
 
 
 # --- Priority list -------------------------------------------------------------
@@ -131,26 +174,26 @@ def next_inspection_rows(full, as_of, add_history_features, reinspection_days=30
 
 
 def _describe(feature, row):
-    """One feature and its value, in words a manager can read."""
+    """One feature and its value, in words a manager can read. Returns None when the value is
+    not something a reader would accept as a reason for a HIGH score ("previous visit passed")."""
     v = row.get(feature)
     missing = pd.isna(v)
     if feature == "prior_fail_rate":
-        return "no inspection history" if missing else f"failed {v:.0%} of all past visits"
+        return None if missing else f"failed {v:.0%} of all past visits"
     if feature == "prior_routine_fail_rate":
-        return "no routine inspection on record" if missing else f"failed {v:.0%} of past routine inspections"
+        return None if missing else f"failed {v:.0%} of past routine inspections"
     if feature == "last_routine_n_viol":
-        return "no routine inspection on record" if missing else f"{v:.0f} violations at the last routine inspection"
+        return None if missing else f"{v:.0f} violations at the last routine inspection"
     if feature == "last_routine_n_lvl3":
-        return "no routine inspection on record" if missing else f"{v:.0f} serious violations at the last routine inspection"
+        return None if missing or v == 0 else f"{v:.0f} serious violations at the last routine inspection"
     if feature == "last_routine_fail":
-        return "no routine inspection on record" if missing else (
-            "failed the last routine inspection" if v == 1 else "passed the last routine inspection")
+        return "failed the last routine inspection" if v == 1 else None
     if feature == "last_fail":
-        return "no previous visit" if missing else ("previous visit failed" if v == 1 else "previous visit passed")
+        return "previous visit failed" if v == 1 else None
     if feature == "last_n_viol":
-        return "no previous visit" if missing else f"{v:.0f} violations at the previous visit"
+        return None if missing or v == 0 else f"{v:.0f} violations at the previous visit"
     if feature == "last_n_lvl3":
-        return "no previous visit" if missing else f"{v:.0f} serious violations at the previous visit"
+        return None if missing or v == 0 else f"{v:.0f} serious violations at the previous visit"
     if feature == "days_since_last":
         return "never inspected before" if missing else f"{v:.0f} days since the last visit"
     if feature == "license_age_days":
@@ -162,9 +205,9 @@ def _describe(feature, row):
     if feature == "month":
         return f"time of year ({MONTH_NAMES[int(v) - 1]})"
     if feature == "is_takeout":
-        return "offers take-out" if v == 1 else "no take-out"
+        return "offers take-out" if v == 1 else None
     if feature == "is_first":
-        return "first inspection on record" if v == 1 else "has been inspected before"
+        return "first inspection on record" if v == 1 else None
     if feature == "location":
         return f"location ({row.get('neighborhood')}, zip {row.get('zip')})"
     if feature == "text":
@@ -173,13 +216,14 @@ def _describe(feature, row):
 
 
 def top_drivers(model, X, rows, text_features=(), n=3):
-    """For each row, the n features that push its risk up the most, in plain words.
+    """For each row, the n inputs that push its score up the most, in plain words.
 
     Uses LightGBM's built-in contributions (pred_contrib): how much each feature moved this
-    restaurant's score away from the average.
+    restaurant's score away from the average. These are factors in the model's score. They
+    are not causes, and not findings about the business.
     """
     contrib = pd.DataFrame(model.predict_proba(X, pred_contrib=True)[:, :-1], columns=X.columns, index=X.index)
-    # Columns that describe one thing are added up into one driver.
+    # Columns that describe one thing are added up into one factor.
     groups = {"text": [c for c in text_features if c in contrib.columns],
               "location": [c for c in ("zip", "neighborhood") if c in contrib.columns]}
     for name, cols in groups.items():
@@ -188,34 +232,38 @@ def top_drivers(model, X, rows, text_features=(), n=3):
             contrib = contrib.drop(columns=cols)
     out = []
     for idx, c in contrib.iterrows():
-        top = c[c > 0].sort_values(ascending=False).head(n)
-        out.append("; ".join(_describe(f, rows.loc[idx]) for f in top.index))
+        ranked = c[c > 0].sort_values(ascending=False).index
+        words = [d for d in (_describe(f, rows.loc[idx]) for f in ranked) if d]
+        out.append("; ".join(words[:n]))
     return out
 
 
-def plot_impact_bar(impact, best_label, title, path=None):
-    """Failures found per year at fixed capacity: random order vs. the rule vs. the model."""
+def plot_impact_bar(impact, best, title, path=None, k=K):
+    """Failed inspections found in the first k share of visits: random order vs. the rule vs. the model."""
     import matplotlib.pyplot as plt
-    from src.evaluate import MODEL_COLORS, set_plot_style
+    from src.evaluate import FIGURE_LABELS, MODEL_COLORS, set_plot_style
 
     set_plot_style()
     value = impact.set_index("quantity")["value"]
-    rows = [("Random order\n(today)", value["Failures found per year, random order"], MODEL_COLORS["B0_random"]),
-            ("Past failure rate\n(rule)", value["Failures found per year, past-failure-rate rule (B1)"], MODEL_COLORS["B1_past_fail_rate"]),
-            (best_label, value[[q for q in value.index if q.startswith("Failures found per year, ") and "random" not in q and "B1" not in q][0]],
-             MODEL_COLORS["M1_lgbm"])]
-    fig, ax = plt.subplots(figsize=(8.5, 5.5))
+    found = {q.rsplit(", ", 1)[1]: v for q, v in value.items() if q.startswith("Failed inspections found per year in the first")}
+    rows = [(FIGURE_LABELS["B0_random"], found["random order"], MODEL_COLORS["B0_random"]),
+            (FIGURE_LABELS["B1_past_fail_rate"], found["past-failure-rate rule (B1)"], MODEL_COLORS["B1_past_fail_rate"]),
+            (FIGURE_LABELS[best], found[best], MODEL_COLORS[best])]
+    visits = value[[q for q in value.index if q.startswith("Visits per year")][0]]
+    total = value["Failed inspections per year in total, in any visit order"]
+
+    fig, ax = plt.subplots(figsize=(9, 5.8))
     bars = ax.bar([r[0] for r in rows], [r[1] for r in rows], color=[r[2] for r in rows])
     for bar, (_, v, _) in zip(bars, rows):
         ax.text(bar.get_x() + bar.get_width() / 2, v + 12, f"{v:,.0f}", ha="center", fontsize=15, fontweight="bold")
     extra = rows[2][1] - rows[0][1]
-    ax.text(0.02, 0.95, f"+{extra:,.0f} failures found per year vs. random order,\nwith the same number of visits",
-            transform=ax.transAxes, va="top", fontsize=13, color=MODEL_COLORS["M1_lgbm"], fontweight="bold")
-    visits = value[[q for q in value.index if q.startswith("Visits per year")][0]]
-    ax.set_ylabel("Failed inspections found per year")
-    ax.set_ylim(0, max(r[1] for r in rows) * 1.3)
+    ax.text(0.02, 0.96, f"{extra:,.0f} more failed inspections found in the\nfirst {k:.0%} of visits than in random order",
+            transform=ax.transAxes, va="top", fontsize=13, color=MODEL_COLORS[best], fontweight="bold")
+    ax.set_ylabel(f"Failed inspections found per year\nin the first {k:.0%} of visits")
+    ax.set_ylim(0, max(r[1] for r in rows) * 1.32)
     ax.set_title(title)
-    ax.text(0.0, -0.2, f"Same capacity in every bar: {visits:,.0f} visits per year (20% of routine inspections).",
+    ax.text(0.0, -0.3, f"Each bar: the first {visits:,.0f} of about {visits / k:,.0f} routine inspections a year. Over the whole year the total\n"
+                        f"(about {total:,.0f} failed inspections) is the same in any order. The gain is finding them earlier.",
             transform=ax.transAxes, fontsize=11)
     fig.tight_layout()
     if path:

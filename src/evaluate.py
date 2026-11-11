@@ -25,12 +25,12 @@ MODEL_COLORS = {
 }
 
 
-def _ranked(y, score, seed=SEED + 1):
-    """Labels sorted from highest to lowest score, for curves. Ties are broken at random with
-    their own fixed seed, so a model that gives many rows the same score gets no credit from
-    row order."""
+def _ranked(y, score, seed=SEED):
+    """Labels sorted from highest to lowest score, for curves. Ties are broken at random, so a
+    model that gives many rows the same score gets no credit from row order. The random stream
+    is derived from the seed (42) but is separate from every other use of it."""
     y, score = np.asarray(y), np.asarray(score, dtype=float)
-    tie_breaker = np.random.default_rng(seed).random(len(y))
+    tie_breaker = np.random.default_rng([seed, 1]).random(len(y))
     order = np.lexsort((tie_breaker, -score))   # sort by -score, then by the tie breaker
     return y[order]
 
@@ -66,36 +66,79 @@ def gains_curve(y, score):
     })
 
 
-def bootstrap_ci(y, score, metric, n=500, seed=SEED, k=K):
-    """95% confidence interval for one metric: resample inspections with replacement n times."""
+METRICS = ["auc", "catch_at_k", "precision_at_k"]
+
+
+def _resamples(n_rows, n, seed, groups=None):
+    """Yield n bootstrap samples of row positions.
+
+    Without `groups`, rows are drawn with replacement. With `groups` (one label per row, here
+    the license number), whole restaurants are drawn with replacement and all their inspections
+    come along. That is the honest unit: inspections of one restaurant are not independent.
+    """
+    rng = np.random.default_rng(seed)
+    if groups is None:
+        for _ in range(n):
+            yield rng.integers(0, n_rows, n_rows)
+        return
+    codes = pd.factorize(np.asarray(groups))[0]
+    order = np.argsort(codes, kind="stable")
+    rows_of = np.split(order, np.cumsum(np.bincount(codes))[:-1])    # row positions of each restaurant
+    for _ in range(n):
+        picked = rng.integers(0, len(rows_of), len(rows_of))
+        yield np.concatenate([rows_of[g] for g in picked])
+
+
+def bootstrap_all(y, score, n=500, seed=SEED, k=K, groups=None):
+    """95% confidence interval of every metric: {metric: (low, high)}."""
     y, score = np.asarray(y), np.asarray(score, dtype=float)
-    rng = np.random.default_rng(seed)
-    values = []
-    for _ in range(n):
-        idx = rng.integers(0, len(y), len(y))
-        values.append(evaluate(y[idx], score[idx], k)[metric])
-    return tuple(np.percentile(values, [2.5, 97.5]))
+    values = pd.DataFrame([evaluate(y[idx], score[idx], k) for idx in _resamples(len(y), n, seed, groups)])
+    return {m: tuple(np.percentile(values[m], [2.5, 97.5])) for m in METRICS}
 
 
-def bootstrap_diff_ci(y, score_a, score_b, metric, n=500, seed=SEED, k=K):
-    """95% CI for metric(a) - metric(b), using the SAME resampled rows for both models.
-    If the interval excludes 0, the difference is larger than the sampling noise."""
+def bootstrap_ci(y, score, metric, n=500, seed=SEED, k=K, groups=None):
+    """95% confidence interval for one metric: resample n times (see _resamples)."""
+    return bootstrap_all(y, score, n=n, seed=seed, k=k, groups=groups)[metric]
+
+
+def paired_differences(y, score_a, score_b, n=2000, seed=SEED, k=K, groups=None):
+    """metric(a) - metric(b) with a 95% CI, using the SAME resamples for both models.
+
+    Returns {metric: (difference, low, high)}. If the interval excludes 0, the difference is
+    larger than the sampling noise.
+    """
     y, score_a, score_b = np.asarray(y), np.asarray(score_a, dtype=float), np.asarray(score_b, dtype=float)
-    rng = np.random.default_rng(seed)
+    point_a, point_b = evaluate(y, score_a, k), evaluate(y, score_b, k)
     diffs = []
-    for _ in range(n):
-        idx = rng.integers(0, len(y), len(y))
-        diffs.append(evaluate(y[idx], score_a[idx], k)[metric] - evaluate(y[idx], score_b[idx], k)[metric])
-    return tuple(np.percentile(diffs, [2.5, 97.5]))
+    for idx in _resamples(len(y), n, seed, groups):
+        a, b = evaluate(y[idx], score_a[idx], k), evaluate(y[idx], score_b[idx], k)
+        diffs.append({m: a[m] - b[m] for m in METRICS})
+    diffs = pd.DataFrame(diffs)
+    return {m: (point_a[m] - point_b[m], *np.percentile(diffs[m], [2.5, 97.5])) for m in METRICS}
 
 
-def results_table(y, scores, n_boot=500):
+def bootstrap_diff_ci(y, score_a, score_b, metric, n=2000, seed=SEED, k=K, groups=None):
+    """95% CI for metric(a) - metric(b) on the same resamples (see paired_differences)."""
+    return paired_differences(y, score_a, score_b, n=n, seed=seed, k=k, groups=groups)[metric][1:]
+
+
+def difference_table(y, scores, model, others, groups=None, n=2000):
+    """Paired differences `model` minus each of `others`, one row per pair and metric."""
+    rows = []
+    for other in others:
+        for metric, (diff, lo, hi) in paired_differences(y, scores[model], scores[other], n=n, groups=groups).items():
+            rows.append({"model": model, "minus": other, "metric": metric, "difference": diff,
+                         "ci_lo": lo, "ci_hi": hi, "beyond_noise": bool(lo > 0 or hi < 0)})
+    return pd.DataFrame(rows)
+
+
+def results_table(y, scores, n_boot=500, groups=None):
     """One row per model with the three metrics and their bootstrap CIs. `scores` = {name: score}."""
     rows = []
     for name, score in scores.items():
         row = {"model": name, **evaluate(y, score)}
-        for metric in ["auc", "catch_at_k", "precision_at_k"]:
-            row[f"{metric}_lo"], row[f"{metric}_hi"] = bootstrap_ci(y, score, metric, n=n_boot)
+        for metric, (lo, hi) in bootstrap_all(y, score, n=n_boot, groups=groups).items():
+            row[f"{metric}_lo"], row[f"{metric}_hi"] = lo, hi
         rows.append(row)
     return pd.DataFrame(rows)
 
@@ -155,7 +198,14 @@ def self_test():
     y_small, tied_scores = np.array([1, 1, 0, 0, 1, 0, 0, 0, 0, 0]), np.array([9, 5, 5, 5, 5, 1, 1, 1, 1, 1.0])
     assert abs(evaluate(y_small, tied_scores, k=0.3)["precision_at_k"] - (1 + 2 * 0.5) / 3) < 1e-12
     lo, hi = bootstrap_ci(y[:2000], rng.random(2000), "precision_at_k", n=100)
-    assert lo < y.mean() < hi
+    assert lo < y[:2000].mean() < hi
+    # Clustered resampling: with one row per group it is an ordinary bootstrap; a score minus
+    # itself is exactly zero on every resample.
+    groups = np.repeat(np.arange(500), 4)
+    lo, hi = bootstrap_ci(y[:2000], rng.random(2000), "precision_at_k", n=100, groups=groups)
+    assert lo < y[:2000].mean() < hi
+    s_same = rng.random(2000)
+    assert paired_differences(y[:2000], s_same, s_same, n=50, groups=groups)["precision_at_k"] == (0.0, 0.0, 0.0)
     print("evaluate.py self-test passed: perfect score gives catch_at_k = min(1, k / base rate); "
           "random and constant scores give about k")
 

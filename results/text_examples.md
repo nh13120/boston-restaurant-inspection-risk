@@ -1,6 +1,6 @@
 # Where the text model and the history model disagree most
 
-Validation year (2023). The text changes the ranking very little. Among the 526 failed inspections in the text model's riskiest 10%, the largest move up from the history-only ranking is 10.6 percentile points and the median move is 0.3. The two models' riskiest-20% lists share 1,004 of 1,105 inspections.
+Validation year (2023). The text changes the ranking very little. Among the 526 failed inspections in the text model's riskiest 10%, the largest move up from the history-only ranking is 10.6 percentile points and the median move is 0.3. The two models' riskiest-20% lists share 1,004 of 1,104 inspections.
 
 The three largest moves are below. 3 of the 3 were already in the history-only model's riskiest 20%, so the text did not change the decision to visit them. The snippet is the inspector's comment from the previous visit, the only text the model sees. Personal details are masked.
 

@@ -3,8 +3,11 @@
   "capacity_k": 0.2,
   "selection_metric": "precision_at_k on validation (2023)",
   "final_model": "M1_lgbm",
-  "final_model_rule": "simplest of B2, M1, M2 that no more elaborate model beats beyond noise (95% CI of the paired validation hit-rate difference excludes zero)",
-  "fit_rows_for_test": "train + validation (2016 to 2023) for every model, the PCA and the B1 fallback",
+  "final_model_rule": "M1 (the brief's main model) unless M2 beats it beyond noise on validation (95% CI of the paired hit-rate difference, 2,000 resamples of whole restaurants, excludes zero)",
+  "final_model_caveat": "on validation, M1's lead over logistic regression (B2) is not distinguishable from noise",
+  "fit_rows_for_test": "train + validation (2016 to 2023) for every model, the PCA and the B1 fallback, as the project brief specifies for the final test run: 'training rows' then means every row before the test period",
+  "confidence_intervals": "percentile bootstrap, resampling whole restaurants (license numbers); 500 resamples for single metrics, 2,000 for paired differences",
+  "sensitivity_to_report": "hit rate of the hand rule 'most violations at the last routine inspection first'",
   "comparisons_to_report": [
     "M1_lgbm minus B0_random, paired bootstrap, on precision_at_k, catch_at_k and auc",
     "M1_lgbm minus B1_past_fail_rate, paired bootstrap, on precision_at_k, catch_at_k and auc",
@@ -31,8 +34,7 @@
     "zip"
   ],
   "B0_random": {
-    "seed": 42,
-    "note": "one random draw; its expected hit rate is the fail rate"
+    "note": "constant score, evaluated as the average over all random orders: hit rate = fail rate"
   },
   "B1_past_fail_rate": {
     "first_inspection_fallback": "mean prior_fail_rate of the fitting rows"

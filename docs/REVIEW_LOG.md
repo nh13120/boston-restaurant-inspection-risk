@@ -73,3 +73,19 @@ Verdict: 0 BLOCKER, 4 MAJOR, 6 MINOR. No leakage found: all 15 numeric features 
 | 8 | MINOR | B0 is one random draw and shared its random stream with the tie-breaker. | Ties no longer use a random draw in the metrics; curves use their own seed. B0 stays one random draw, as the brief asks, and the notebooks state that its expected hit rate is the fail rate. |
 | 9 | MINOR | Late re-inspections remain in the table. | Limitation, as above. |
 | 10 | MINOR | "12 history features" in a notebook text; there are 17. | Fixed. |
+
+### Round 2
+
+Same prompt, fresh subagent. Verdict: 0 BLOCKER, 1 MAJOR, 8 MINOR. All five prediction files reproduced exactly with the reviewer's own metric code. Refitting B2, M1 and M2 on the training rows gave identical scores, the train-only PCA was confirmed by exact refit, and the features matched a by-hand rebuild for all 5,521 validation rows.
+
+| # | Tag | Finding | What we did |
+|---|---|---|---|
+| 1 | MAJOR | The ladder rule chose M1 over logistic regression on a margin of one inspection: the interval's lower bound was 0.0009 and moved to 0.0000 with another seed or with resampling by license. The rule was also written after the numbers were known. | Dropped the ladder. M1 is carried forward because the brief names it, unless M2 beats it beyond noise. Notebook 03 prints that M1's lead over logistic regression is not distinguishable from noise. All paired comparisons use 2,000 resamples of whole restaurants (G2.3, G2.6). |
+| 2 | MINOR | The text ablation also differs in tuned settings. | Reworded, and added a same-settings comparison (text added to M1's settings: -0.3 points, CI -1.1 to +0.5). |
+| 3 | MINOR | M2's lead over M1 is numeric noise and device-dependent. | Reported as "equal within noise". The device caveat is in the config and README. We keep `mps`, as the brief asks. |
+| 4 | MINOR | Refitting the PCA on train + validation for the test run conflicts with a literal reading of "PCA on train only". | The brief asks for that refit. Stated in the frozen config and in G2.7. |
+| 5 | MINOR | Test-year label summaries in notebook 01. | Left, as before: the brief asks for them. |
+| 6 | MINOR | B0 was one random draw. | B0 now scores every row the same, and the metric averages over all random orders: hit rate equals the fail rate (G2.2). |
+| 7 | MINOR | A one-feature rule beats B1 by 4 points. | Added as a sensitivity row in notebooks 02 and 04 (G2.8). |
+| 8 | MINOR | Validation was reused across rounds, which the notebook did not say. | Notebook 03 now says every validation number is optimistic and only test counts. |
+| 9 | MINOR | Tie-breaker seed 43; top-20% count off by one in the text examples. | The tie-breaker stream is derived from seed 42. The examples use the same cutoff as `evaluate`. |

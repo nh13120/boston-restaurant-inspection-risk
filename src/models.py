@@ -55,8 +55,16 @@ def load_model_table(path="../data/processed/model_table.parquet"):
 
 # --- Baselines ---------------------------------------------------------------
 def score_random(df, seed=SEED):
-    """B0: the current routine schedule ignores risk, so the order is random."""
-    return np.random.default_rng(seed).random(len(df))
+    """B0: the current routine schedule ignores risk. Every inspection gets the same score, and
+    evaluate() averages over every possible random order of tied rows. The result is exactly
+    what a random order achieves on average: a hit rate equal to the fail rate and an AUC of 0.5."""
+    return np.full(len(df), 0.5)
+
+
+def score_simple_rule(df):
+    """Sensitivity check: another rule an inspector could apply by hand, "most violations at the
+    last routine inspection first". Restaurants with no routine history go last."""
+    return df["last_routine_n_viol"].fillna(-1).to_numpy()
 
 
 def past_fail_rate_fallback(fit_rows):

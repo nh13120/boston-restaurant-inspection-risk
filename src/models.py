@@ -55,7 +55,7 @@ def load_model_table(path="../data/processed/model_table.parquet"):
 
 # --- Baselines ---------------------------------------------------------------
 def score_random(df, seed=SEED):
-    """B0: the current routine schedule ignores risk. Every inspection gets the same score, and
+    """B0: we ASSUME the current routine schedule ignores risk. Every inspection gets the same score, and
     evaluate() averages over every possible random order of tied rows. The result is exactly
     what a random order achieves on average: a hit rate equal to the fail rate and an AUC of 0.5."""
     return np.full(len(df), 0.5)

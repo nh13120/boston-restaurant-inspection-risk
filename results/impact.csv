@@ -8,7 +8,7 @@ Visits per year in the first 20%,1201.47658045977,,,20% x inspections per year
 "Failed inspections found per year in the first 20% of visits, M1_lgbm",1058.377011034014,,,M1_lgbm test hit rate x visits
 Extra failed inspections found per year in the first 20% of visits vs. random order,349.4981317236692,333.42066409801106,364.2814756133392,"difference of the lines above: failures found EARLIER, not additional failures"
 Extra failed inspections found per year in the first 20% of visits vs. the rule (B1),94.18670794936872,78.6375698527329,109.19118184964644,"difference of the lines above: failures found EARLIER, not additional failures"
-Inspections saved per year to match the rule (B1),116.15229885057471,,,"M1_lgbm needs 3,102 test visits to find the 2756 failures B1 finds in 3,434"
-"Hit rate of the visits ISD actually made first (first 20% of each quarter, by date)",0.6163705214098456,,,a rough picture of today's order; seasonality within a quarter can also move it
-Extra failed inspections found per year in the first 20% of visits vs. ISD's actual order,323.03026034499504,,,"(M1_lgbm ranked within each quarter, hit rate 0.885, minus the line above) x visits"
+Fewer visits needed per year to find as many failed inspections as the rule (B1) finds in its first 20%,116.15229885057471,,,"M1_lgbm needs 3,102 test visits to find the 2756 failures B1 finds in 3,434"
+"Hit rate of the visits ISD actually made first (first 20% of each quarter, by date)",0.6153490458011346,,,a rough picture of today's order; seasonality within a quarter can also move it
+Extra failed inspections found per year in the first 20% of visits vs. ISD's actual order,324.2575393663722,,,"(M1_lgbm ranked within each quarter, hit rate 0.885, minus the line above) x visits"
 "Weeks earlier a visit that ends in a failure happens, on average",1.1142885344839741,,,"risk order within each of 12 calendar quarters, actual visit slots kept; 10,131 failed inspections. Visits that end in a pass move 1.6 weeks later. The number grows with the window: 0.4 weeks within months, 4.4 within years"

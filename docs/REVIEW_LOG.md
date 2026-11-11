@@ -129,3 +129,21 @@ Verdict: 0 BLOCKER, 2 MAJOR, 10 MINOR. The reviewer reproduced every number in `
 | 12 | MINOR | Interval ends quoted to 0.1 point from 500 resamples. | README rounds interval ends to whole points. |
 
 Deliberately left: location stays in the model (changing inputs after the test would break the freeze), with a recommendation to ISD.
+
+### Round 2
+
+Same prompt, fresh subagent. Verdict: 0 BLOCKER, 0 MAJOR, 11 MINOR. Gate 3 passed. All 15 headline values matched to 1e-16, all 13 impact rows reproduced, M1 and B2 refitted from the frozen config gave the saved test predictions exactly, and the test predictions and `results.csv` are unchanged since the scoring commit.
+
+| # | Tag | Finding | What we did |
+|---|---|---|---|
+| 1 | MINOR | The yearly gain (346, 407, 288) varies more than its interval (333 to 364) suggests. | Yearly gains added to `results_by_year.csv`, notebook 04 and the README, with a sentence on what the interval covers. |
+| 2 | MINOR | The impact figure headlined only the most favourable comparison. | The callout now reads "about 320 to 350 more than the assumed current order, and 94 more than the simple rule". |
+| 3 | MINOR | The "(chosen)" bar is not the tallest, and the figure did not say why. | Footnote added: chosen on 2023 data, the comment model's edge appeared only afterwards. |
+| 4 | MINOR | "Borderline across bootstrap seeds" understated M2's lead. | Reworded: the interval excludes zero with every seed. |
+| 5 | MINOR | "Inspections saved" contradicts "ISD makes every inspection". | Row renamed "fewer visits needed to find as many failed inspections as the rule". |
+| 6 | MINOR | The 1.1 weeks was quoted without its window dependence. | README adds 0.4 within months, 4.4 within years, and that passing visits move 1.6 weeks later. |
+| 7 | MINOR | Gains-curve axes said "the year's" for a pooled 2.86-year curve. | Axis labels corrected. |
+| 8 | MINOR | Random order stated as fact in two places. | Reworded as an assumption in notebook 04 and `models.py`. |
+| 9 | MINOR | 61.7% in the log against 61.6% in the table; same-day ties broken by row order. | Same-day ties are now averaged, as in `evaluate()`: 61.5% and +324. Log corrected. |
+| 10 | MINOR | The location caveat did not say how cheap location is to remove. | README: dropping location cost about 0.3 points on validation. |
+| 11 | MINOR | The priority list names real businesses with a risk percentage and no caveat in the file. | Column renamed `estimated_risk_pct`; `results/priority_list_note.md` sits next to the file. Business names stay, as the brief asks. Flagged for the team before the repo goes public. |

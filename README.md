@@ -40,7 +40,7 @@ Hit rate is the share of the riskiest 20% of inspections that end in a failure. 
 | M1 LightGBM on history (final model) | 88.1% (86 to 89) | 29.9% | 0.748 |
 | M2 LightGBM on history + comment embeddings | 88.8% (87 to 90) | 30.1% | 0.747 |
 
-ISD makes every routine inspection sooner or later, so the yearly total of about 3,540 failed inspections is the same in any order. Ranking changes when they are found. In the first 20% of visits (1,201 a year), M1 finds 349 more failed inspections than a random order (CI 333 to 364) and 94 more than the rule (79 to 109). Reordered within each quarter, a visit that ends in a failure comes 1.1 weeks sooner on average. `results/priority_list.csv` scores the next inspection of 3,163 active restaurants.
+ISD makes every routine inspection sooner or later, so the yearly total of about 3,540 failed inspections is the same in any order. Ranking changes when they are found. In the first 20% of visits (1,201 a year), M1 finds 349 more failed inspections than a random order (CI 333 to 364; 346, 407 and 288 by year) and 94 more than the rule (79 to 109). Reordered within each quarter, a visit that ends in a failure comes 1.1 weeks sooner on average and one that ends in a pass 1.6 weeks later (the gain is 0.4 weeks within months, 4.4 within years). `results/priority_list.csv` scores the next inspection of 3,163 active restaurants.
 
 ## Modeling choices
 
@@ -48,13 +48,13 @@ ISD makes every routine inspection sooner or later, so the yearly total of about
 - Features use only earlier inspections of the same license (`shift(1)`, cross-checked by hand), with history since 2006. The model table starts in 2016.
 - Time split: train 2016 to 2022, validation 2023, test 2024 onward. Final fits use 2016 to 2023.
 - Text: the previous inspection's comments, embedded with a frozen `all-MiniLM-L6-v2`, mean-pooled, reduced to 32 PCA components.
-- Intervals are bootstraps over whole restaurants. M1 was fixed as the final model on validation, where text added nothing.
+- Intervals are bootstraps over whole restaurants. They do not cover change from year to year (2026 is the weakest year). M1 was fixed as the final model on validation.
 
 ## Limitations
 
 - "Random order" as today's schedule is an assumption. The visits ISD actually made first each quarter failed 62% of the time, which puts the gain nearer 320 than 349. Against a simple rule the gain is 40 to 95 failed inspections a year: ranking by violations at the last routine inspection alone reaches 81.9%, and M1's lead over B1 falls to 3.7 points without late follow-ups (4% of rows) and to 3.3 counting each restaurant once.
-- The algorithm matters little. M1 beats logistic regression by 1.1 points (CI 0.3 to 1.9). The text model is 0.7 ahead of M1 (CI 0.1 to 1.4): beyond noise by our frozen rule, borderline across bootstrap seeds, about twice M2's 0.3-point noise between devices. We kept M1 because the choice was fixed before the test.
-- Scores and "model factors" are model outputs, not causes or findings about a business. Zip code is an input, so some neighborhoods rank higher. ISD should decide whether that is acceptable. The test set is the inspections ISD chose to make. Nothing here measures prevented illness or dollars. Location and type are pull-date values, and name masking in comments is best effort.
+- The algorithm matters little. M1 beats logistic regression by 1.1 points (CI 0.3 to 1.9). The text model is 0.7 ahead of M1 (CI 0.1 to 1.4). That interval excludes zero with every bootstrap seed, although the edge is only about twice M2's 0.3-point noise between devices. We kept M1 because the choice was fixed before the test, where text added nothing.
+- Scores and "model factors" are model outputs, not causes or findings about a business. Zip code is an input, so some neighborhoods rank higher. Dropping location cost about 0.3 points on validation, so ISD can choose to leave it out. The test set is the inspections ISD chose to make. Nothing here measures prevented illness or dollars. Location and type are pull-date values, and name masking in comments is best effort.
 
 ## Repo map
 

@@ -43,14 +43,13 @@ def first_visits_hit_rate(dates, y, score=None, k=K, window="Q"):
     picture of today's order. With a score, they are the riskiest k share of that window.
     """
     df = pd.DataFrame({"date": pd.to_datetime(pd.Series(dates)).to_numpy(), "y": np.asarray(y, dtype=float)})
-    df["rank_by"] = df["date"].rank(method="first") if score is None else -np.asarray(score, dtype=float)
+    # "Earliest first" is a ranking like any other: the earlier the date, the higher the score.
+    # evaluate() averages over visits made on the same day, as it does for any tied score.
+    df["rank_score"] = -df["date"].astype("int64").astype(float) if score is None else np.asarray(score, dtype=float)
     hits = visits = 0.0
     for _, w in df.groupby(df["date"].dt.to_period(window)):
         n_top = int(round(k * len(w)))
-        if score is None:
-            hits += w.sort_values("date", kind="stable")["y"].head(n_top).sum()
-        else:
-            hits += evaluate(w["y"].to_numpy(), -w["rank_by"].to_numpy(), k)["precision_at_k"] * n_top
+        hits += evaluate(w["y"].to_numpy(), w["rank_score"].to_numpy(), k)["precision_at_k"] * n_top
         visits += n_top
     return hits / visits
 
@@ -119,7 +118,7 @@ def impact_table(y, dates, scores, best, k=K, diff_ci=None):
          "difference of the lines above: failures found EARLIER, not additional failures"),
         (f"Extra failed inspections found per year {first} vs. the rule (B1)", found[best] - found["B1_past_fail_rate"],
          "difference of the lines above: failures found EARLIER, not additional failures"),
-        ("Inspections saved per year to match the rule (B1)", saved_per_year,
+        ("Fewer visits needed per year to find as many failed inspections as the rule (B1) finds in its first 20%", saved_per_year,
          f"{best} needs {needed_in_test:,} test visits to find the {b1_found_in_test:.0f} failures B1 finds in {n_test_capacity:,}"),
         (f"Hit rate of the visits ISD actually made first (first {k:.0%} of each quarter, by date)", actual_first,
          "a rough picture of today's order; seasonality within a quarter can also move it"),
@@ -256,8 +255,12 @@ def plot_impact_bar(impact, best, title, path=None, k=K):
     bars = ax.bar([r[0] for r in rows], [r[1] for r in rows], color=[r[2] for r in rows])
     for bar, (_, v, _) in zip(bars, rows):
         ax.text(bar.get_x() + bar.get_width() / 2, v + 12, f"{v:,.0f}", ha="center", fontsize=15, fontweight="bold")
-    extra = rows[2][1] - rows[0][1]
-    ax.text(0.02, 0.96, f"{extra:,.0f} more failed inspections found in the\nfirst {k:.0%} of visits than in random order",
+    extra_random = rows[2][1] - rows[0][1]
+    extra_actual = value[[q for q in value.index if q.endswith("vs. ISD's actual order")][0]]
+    extra_rule = rows[2][1] - rows[1][1]
+    lo, hi = sorted([round(extra_actual, -1), round(extra_random, -1)])
+    ax.text(0.02, 0.97, f"About {lo:,.0f} to {hi:,.0f} more than the assumed current order,\n"
+                        f"and {extra_rule:,.0f} more than the simple rule",
             transform=ax.transAxes, va="top", fontsize=13, color=MODEL_COLORS[best], fontweight="bold")
     ax.set_ylabel(f"Failed inspections found per year\nin the first {k:.0%} of visits")
     ax.set_ylim(0, max(r[1] for r in rows) * 1.32)

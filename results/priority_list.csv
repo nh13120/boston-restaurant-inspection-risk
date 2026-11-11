@@ -1,4 +1,4 @@
-rank,business_name,license_no,neighborhood,risk_pct,top_3_model_factors
+rank,business_name,license_no,neighborhood,estimated_risk_pct,top_3_model_factors
 1,Pho Le,68290,Dorchester,96,11 violations at the last routine inspection; failed 100% of past routine inspections; failed 57% of all past visits
 2,Fritay Restaurant,380175,Mattapan,96,11 violations at the last routine inspection; failed 91% of past routine inspections; failed 69% of all past visits
 3,BOS' Sichuan Taste,455713,Allston,96,8 violations at the last routine inspection; failed 87% of past routine inspections; failed 67% of all past visits

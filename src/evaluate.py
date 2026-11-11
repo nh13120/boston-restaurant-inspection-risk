@@ -3,6 +3,8 @@
 precision_at_k (the "hit rate") = share of the visited inspections that find a failure.
 catch_at_k                      = share of all failures that the visited inspections find.
 """
+import textwrap
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -205,8 +207,8 @@ def plot_gains(y, scores, title, path=None, k=K, highlight=None):
                     color=MODEL_COLORS.get(highlight), arrowprops=dict(arrowstyle="->", color=MODEL_COLORS.get(highlight)))
     else:
         ax.text(k * 100 + 1, 3, f"Capacity: {k:.0%} of inspections", fontsize=11)
-    ax.set_xlabel("Share of the year's inspections made, riskiest first (%)")
-    ax.set_ylabel("Share of the year's failed inspections found (%)")
+    ax.set_xlabel("Share of inspections made, riskiest first (%)")
+    ax.set_ylabel("Share of failed inspections found (%)")
     ax.set_title(title)
     ax.set_xlim(0, 100)
     ax.set_ylim(0, 100)
@@ -286,7 +288,7 @@ FEATURE_LABELS = {
 }
 
 
-def plot_hit_rate_bar(results, title, path=None, base_rate=None, k=K, final=None):
+def plot_hit_rate_bar(results, title, path=None, k=K, final=None, note=""):
     """Hit rate at capacity k for each model, with 95% bootstrap ranges. `results` = results_table output."""
     set_plot_style()
     fig, ax = plt.subplots(figsize=(9.5, 5.8))
@@ -303,8 +305,8 @@ def plot_hit_rate_bar(results, title, path=None, base_rate=None, k=K, final=None
     ax.set_ylim(0, 108)
     ax.set_title(title)
     ax.tick_params(axis="x", labelsize=11)
-    ax.text(0.0, -0.27, f"First {k:.0%} of the test period's inspections, riskiest first. "
-                         "Thin lines on the bars show 95% ranges.", transform=ax.transAxes, fontsize=11)
+    footnote = f"First {k:.0%} of inspections, riskiest first. Thin lines on the bars show 95% ranges. {note}"
+    ax.text(0.0, -0.31, textwrap.fill(footnote, 98), transform=ax.transAxes, fontsize=11, va="top")
     fig.tight_layout()
     if path:
         fig.savefig(path, bbox_inches="tight")

@@ -8,7 +8,7 @@ Boston's Inspectional Services Department (ISD) makes about 6,000 routine restau
 
 ## Setup and run
 
-Python 3.13. About 10 minutes on an Apple-silicon laptop, plus 10 for the first data pull and a 90 MB encoder download.
+Python 3.13. About 6 minutes on an Apple-silicon laptop, plus 10 for the first data pull and a 90 MB encoder download.
 
 ```bash
 python3.13 -m venv .venv && source .venv/bin/activate

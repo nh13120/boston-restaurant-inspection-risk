@@ -1,0 +1,11 @@
+pandas
+pyarrow
+requests
+scikit-learn
+lightgbm
+matplotlib
+transformers
+torch
+jupyter
+nbconvert
+ipykernel

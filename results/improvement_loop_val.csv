@@ -1,0 +1,2 @@
+idea,precision_at_k_before,precision_at_k_after,gain,gain_ci_lo,gain_ci_hi,auc_before,auc_after,threshold_ci_half_width,kept,n_val
+"routine-violation memory (r3_mean_viol, prev2_routine_n_viol)",0.904891304347826,0.9103260869565217,0.005434782608695676,-0.004528985507246341,0.018115942028985536,0.7837577162033154,0.7869559157314923,0.019712409420289845,False,5521

@@ -38,9 +38,9 @@
   },
   "M2_lgbm_text": {
     "features": "history + 32 text PCs + has_prior_comments",
-    "num_leaves": 31,
+    "num_leaves": 7,
     "learning_rate": 0.02,
-    "n_estimators": 93,
+    "n_estimators": 478,
     "encoder": "sentence-transformers/all-MiniLM-L6-v2",
     "max_tokens": 256,
     "pooling": "mean over attention mask",

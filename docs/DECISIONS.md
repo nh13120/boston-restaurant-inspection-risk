@@ -44,7 +44,7 @@ Reasoning: `HE_Filed` visits list violations but ISD does not require a follow-u
 
 **D2.4 Administrative rows leave before history is computed.** They are not inspections, so they should not count in `prior_n` or reset `days_since_last`.
 
-**D2.5 Privacy masking.** `clean()` masks emails, phone numbers and personal names in comments with `[EMAIL]`, `[PHONE]` and `[NAME]`. Names are found three ways: after a context word ("spoke with", "per", "owner", "PIC", "Inspector", "certificate for"), after an honorific, and anywhere a known first name is followed by a capitalized word. The first names come from `src/first_names.txt` (958 names from the BSD `propernames` list, minus names that are also common words, brands or streets). It changes 1,543 of 324,517 distinct comments. Alternative: a named-entity model, which is heavier than this project needs. A regex cannot catch every name, so the README lists that as a limitation. The source data is already public.
+**D2.5 Privacy masking.** `clean()` masks emails, phone numbers and personal names in comments with `[EMAIL]`, `[PHONE]` and `[NAME]`. Names are found three ways: a known first name followed by a capitalized word, anywhere in the text; a name context ("PIC Jane stated", "owner: Jane Doe", "spoke with", "certificate posted for", "Jane Doe is the certified manager"); and after an honorific. The first names come from `src/first_names.txt` (about 1,300 names: the BSD `propernames` list plus common US first names, minus names that are also ordinary words, foods, brands or streets). It changes 1,778 of 324,517 distinct comments. Alternative: a named-entity model, which is heavier than this project needs. A regex cannot catch every name. Two reviewers' independent name lists each found some after our fixes (see G1.7), so the comment text stays in git-ignored `data/` and the README lists this as a limitation.
 
 **D2.6 Extra static feature.** `is_takeout` (from `descript`, the establishment type) joins the feature list. The brief lists type among the static fields.
 
@@ -63,3 +63,33 @@ The reviewer found no leakage. These decisions answer its findings. Details are 
 **G1.5 `licstatus` leaves the model table.** It describes the license today, so it would be future information as a feature. It stays in `inspections_full.parquet` for the priority list. `models.py` also refuses any outcome-side column as a feature. The other static fields (`zip`, `neighborhood`, type) are also as of the pull date. We accept that, because a restaurant's location and type rarely change, and the README says so.
 
 **G1.6 Smaller fixes.** Dates are converted to Boston time before the calendar date is taken. 224 exact duplicate rows are dropped. The leakage check now compares all 13 history columns with a by-hand recomputation for 300 random restaurants. `requirements.txt` is pinned. The lecture paths in D0.2 no longer show the local user name.
+
+**G1.7 Round 2: masking again, and what "pass" means.** The second review found at least 94 comments with names that the first rewrite missed: common names absent from the list (Tony, Mike, Mary), names in capitals, and forms such as "PIC Tom stated". We extended the name list and the contexts (D2.5). Run against the reviewer's own name list, the scan now leaves 3 name-like strings in 324,528 comment pieces. Notebook 01 no longer claims that nothing personal remains. The reviewer also asked us to state that a "pass" means "no follow-up required": 97% of `HE_Filed` visits list at least one violation. The data dictionary now says so. Two things were noted as limitations and left unchanged: the city sometimes edits comment text after the inspection date (13 model rows mention a later date), and history starts in 2006, so `prior_n` is understated for the oldest restaurants.
+
+## Phase 4 and 5: models on validation
+
+**D4.1 Grid.** `num_leaves` 7, 15, 31; `learning_rate` 0.02, 0.05; `n_estimators` 100, 500 (12 combinations), with early stopping after 50 rounds without a better validation AUC. `n_estimators` is an upper limit, and the frozen value is the number of trees early stopping kept. Alternative: caps of 300 and 1000, which early stopping never reached, so half the grid was a duplicate. Selection is on validation `precision_at_k`, ties broken by AUC, then by the smaller model.
+
+**D4.2 Deterministic training.** LightGBM runs with `n_jobs=1`, `deterministic=True` and `force_row_wise=True`, so a rerun gives identical numbers. The lecture uses `n_jobs=-1`. The data is small enough that one thread takes seconds.
+
+**D4.3 Ties in the ranking.** When two inspections have the same score, `evaluate.py` orders them with a seeded random draw. Otherwise a rule with many tied scores, such as B1, would be judged by the row order of the table.
+
+**D5.1 Embedding run.** 100 comments take about 0.4 seconds on `mps`, so the full run takes under a minute. We keep the 256-token truncation (7% of comments are longer) and embed each distinct text once. The cache stores a hash of every text, so it is rebuilt when the text changes.
+
+**D5.2 PCA.** 32 components, fitted on training rows that have comments (59.8% of variance kept). Rows without comments get a zero vector and `has_prior_comments = 0`, as the brief asks.
+
+**D5.3 Text adds no measurable value.** On validation, M2 minus M1 is -0.4 points of hit rate (95% CI -0.9 to +0.6). Before the routine-only features were added (G1.2), text gave +1.7 points. The comments mostly describe the violations of the last routine inspection, and `last_routine_n_viol` now carries that signal directly.
+
+## Improvement loop (one round, validation only)
+
+An experimenter subagent analyzed the validation errors and proposed changes. The rule set in advance: keep a change only if validation `precision_at_k` improves by more than the half-width of M1's bootstrap interval (1.97 points).
+
+What the error analysis found: M1 and M2 make the same mistakes (1,025 of 1,104 top rows in common). Almost every top-ranked row had a failed last routine inspection. The blind spot is restaurants whose last routine inspection was clean (0 to 2 violations): 41% of them still fail, and they hold more than half of the failures the model misses.
+
+**IL.1 Routine-violation memory: tested, not kept.** Two features, `r3_mean_viol` (mean violations over the last three routine inspections) and `prev2_routine_n_viol` (violations at the routine inspection before the last one). Validation hit rate went from 90.49% to 91.03%, a gain of 0.54 points (95% CI -0.45 to +1.81), below the 1.97-point threshold. The experimenter's backtests on 2019 to 2022 also showed gains of 0.5 to 1.2 points each year, so the idea is probably real but small. The code stays in `features.candidate_memory_features` and notebook 03 reruns the test. It is the first thing to try with more data.
+
+**IL.2 Comment truncation: tested by the experimenter, not proposed.** M2's validation hit rate at 32, 64, 128, 256 and 512 tokens was 89.8%, 90.1%, 89.7%, 90.2% and 90.4%. Every difference from 256 is within noise, and none beats M1. We keep 256.
+
+**IL.3 Other feature groups the experimenter tried and dropped.** Ten follow-up-cycle features (89.8%), four result-code features (90.2%) and two comment-size features (89.8%), against M1's 90.5%. None was proposed.
+
+No third proposal was made, and there is no second round, because more rounds would overfit the validation year.

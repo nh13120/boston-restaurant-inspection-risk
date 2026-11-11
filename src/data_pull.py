@@ -81,9 +81,10 @@ def pull_inspections(raw_dir="../data/raw", force=False, reference="../docs/pull
     snapshot, meta_file = raw_dir / "inspections_snapshot.parquet", raw_dir / "pull_metadata.json"
     if snapshot.exists() and not force:
         print(f"Snapshot found, skipping the pull: {snapshot}")
-        if meta_file.exists():
-            _compare_with_reference(json.loads(meta_file.read_text()), reference)
-        return pd.read_parquet(snapshot)
+        df = pd.read_parquet(snapshot)
+        # Hash the file's content itself, so an edited or partial snapshot is noticed.
+        _compare_with_reference({"content_sha256": content_hash(df), "row_count": len(df)}, reference)
+        return df
 
     raw_dir.mkdir(parents=True, exist_ok=True)
     pages, offset = [], 0

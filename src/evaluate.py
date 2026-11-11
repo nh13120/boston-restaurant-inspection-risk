@@ -151,3 +151,68 @@ def self_test():
 
 if __name__ == "__main__":
     self_test()
+
+
+# --- Slide-ready figures -------------------------------------------------------
+FEATURE_LABELS = {
+    "prior_n": "Number of past inspections",
+    "prior_n_3y": "Inspections in the last 3 years",
+    "is_first": "First inspection on record",
+    "prior_fail_rate": "Share of past inspections failed",
+    "prior_routine_fail_rate": "Share of past routine inspections failed",
+    "last_fail": "Previous visit failed",
+    "last_n_viol": "Violations at the previous visit",
+    "last_n_lvl3": "Serious violations at the previous visit",
+    "last_routine_fail": "Last routine inspection failed",
+    "last_routine_n_viol": "Violations at the last routine inspection",
+    "last_routine_n_lvl3": "Serious violations at the last routine inspection",
+    "days_since_last": "Days since the previous visit",
+    "license_age_days": "Years on record",
+    "month": "Month of the year",
+    "is_takeout": "Offers take-out",
+    "neighborhood": "Neighborhood",
+    "zip": "Zip code",
+    "has_prior_comments": "Previous visit has comments",
+}
+
+
+def plot_hit_rate_bar(results, title, path=None, base_rate=None, k=K):
+    """Hit rate at capacity k for each model, with 95% bootstrap intervals. `results` = results_table output."""
+    set_plot_style()
+    fig, ax = plt.subplots(figsize=(9, 5.5))
+    names = list(results["model"])
+    hit = results["precision_at_k"].to_numpy() * 100
+    err = np.vstack([hit - results["precision_at_k_lo"].to_numpy() * 100,
+                     results["precision_at_k_hi"].to_numpy() * 100 - hit])
+    bars = ax.bar([MODEL_LABELS.get(n, n).replace(", ", ",\n").replace(" (", "\n(") for n in names], hit,
+                  yerr=err, capsize=5, color=[MODEL_COLORS.get(n, "#4c72b0") for n in names])
+    for bar, value, high in zip(bars, hit, results["precision_at_k_hi"].to_numpy() * 100):
+        ax.text(bar.get_x() + bar.get_width() / 2, high + 1.5, f"{value:.0f}%", ha="center", fontsize=14, fontweight="bold")
+    if base_rate is not None:
+        ax.axhline(base_rate * 100, color="black", linestyle=":", linewidth=1.2)
+        ax.text(len(names) - 0.5, base_rate * 100 - 4, f"Overall fail rate {base_rate:.0%}", ha="right", fontsize=11)
+    ax.set_ylabel(f"Visits that find a failure (%)")
+    ax.set_ylim(0, 105)
+    ax.set_title(title)
+    ax.tick_params(axis="x", labelsize=11)
+    fig.tight_layout()
+    if path:
+        fig.savefig(path)
+    return fig
+
+
+def plot_importance(importance, title, path=None):
+    """Horizontal bars of the top features. `importance` = models.importance_table output."""
+    set_plot_style()
+    imp = importance.iloc[::-1]
+    labels = [FEATURE_LABELS.get(f, f.replace("text_pc", "Comment text, component ")) for f in imp["feature"]]
+    fig, ax = plt.subplots(figsize=(9, 0.42 * len(imp) + 1.8))
+    ax.barh(labels, imp["share_of_gain"] * 100, color="#4c72b0")
+    for y, value in enumerate(imp["share_of_gain"] * 100):
+        ax.text(value + 0.5, y, f"{value:.0f}%" if value >= 1 else "<1%", va="center", fontsize=11)
+    ax.set_xlabel("Share of the model's predictive power (%)")
+    ax.set_title(title)
+    fig.tight_layout()
+    if path:
+        fig.savefig(path)
+    return fig

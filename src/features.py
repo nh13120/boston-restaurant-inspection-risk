@@ -28,16 +28,25 @@ HISTORY_COLUMNS = ["prior_n", "prior_n_3y", "is_first", "prior_fail_rate", "prio
                    "days_since_last", "is_reinspection"]
 
 # --- Privacy masking -------------------------------------------------------
+# Inspectors sometimes write a person's name, an email or a phone number in a comment.
+# We mask them with [NAME], [EMAIL] and [PHONE]. Names are found in three ways:
+#   1. a known first name followed by another capitalized word ("Jane Doe"), anywhere;
+#   2. a name context: after a role word ("PIC Jane", "owner: Jane Doe"), after "spoke with",
+#      around a certificate, or before "is the certified ...";
+#   3. after an honorific ("Mr. Doe").
+# A regex cannot recognize every name. The README lists that as a limitation.
 FIRST_NAMES = {line.strip() for line in (Path(__file__).parent / "first_names.txt").read_text().splitlines()
                if line.strip() and not line.startswith("#")}
 
-# Common first names left out of first_names.txt because they are also ordinary words, brands
-# or streets ("Mark all containers", "Charles Street"). They are only trusted in a name context
-# such as "PIC Sam" or "stated by Scott Doe".
-_CONTEXT_FIRST_NAMES = FIRST_NAMES | set("""Sam Scott Tom Jack Jim Ben Max Mark Bill Rob Pat Sue Ray Don Ken Ed Al Lee Kim
+# Common first names left out of first_names.txt because they are also ordinary words, foods,
+# brands or streets ("Mark all containers", "Charles Street", "beef patty"). They are only
+# trusted inside a name context such as "PIC Sam" or "stated by Scott Doe".
+_CONTEXT_FIRST_NAMES = FIRST_NAMES | set("""Sam Scott Jack Ben Max Mark Bill Bob Rob Pat Sue Ray Don Ken Ed Al Lee Kim
 Charlie Charles Frank Victor Martin Jordan Taylor Morgan Wayne Sandy Stanley Howard Russell Lawrence Warren Kyle Dean
 Grant Dale Guy Rich Wendy Grace Hope Joy Rose Douglas Lewis Marshall Nelson Wilson Jackson Franklin Curtis Stuart
-Elliott Leon Owen Perry Kay Dawn Holly Ruby Penny Amber Crystal""".split())
+Elliott Leon Owen Perry Kay Dawn Holly Ruby Penny Amber Crystal Angel Chuck Patty April Daisy Norman Lloyd Ross Nick
+Carol Kelly Jean Heather Jerry Mike Art Will Drew Chase Hunter Earl Gene Lance Miles Ward Wade Rod Christian
+Hong Hui Mei Lan Duc Hoa Li Ali Chen Ming Wang Yang Liu Huang Tran Hung Raj Ravi""".split())
 
 # Capitalized words that can follow a role word or a first name without being a person's name.
 _NOT_NAMES = {
@@ -53,34 +62,59 @@ _NOT_NAMES = {
     "Has", "Had", "Will", "Must", "Shall", "Should", "Stated", "Said", "Did", "Does", "Needs", "Unable",
     "Certificate", "Certification", "Expired", "Present", "Posted", "Available", "Onsite", "During",
     "Exterminator", "Exterminating", "Environmental", "Sanitation", "Inspectional", "Regulations",
+    "All", "Any", "Are", "Be", "By", "Or", "As", "That", "This", "From", "It", "With", "Name", "Charge",
+    "Time", "Inspection", "Site", "Isd", "Bfd", "Cfpm", "Gm", "Choke", "Saver", "Training", "Trained",
+    "Hand", "Sink", "Area", "Line", "Station", "Knife", "Knives", "Coat", "Hat", "Table", "Cooler",
+    "Unit", "Door", "Floor", "Wall", "Ceiling", "Room", "Office", "Permit", "License", "Number",
+    "Who", "Were", "Can", "Could", "May", "Also", "When", "Then", "There", "Their", "Only", "But",
+    "Discard", "Store", "Label", "Cover", "Replace", "Install", "Wash", "Keep", "Use", "Ensure",
+    "Observed", "Found", "Noted", "Missing", "Dirty", "Soiled", "Broken", "Corrected", "Informed",
+    "Agreed", "Indicated", "Arrived", "Explained", "Claims", "Claimed", "Told", "States", "Says",
 }
-# Words that introduce a named person. After a TITLE, two capitalized words are treated as a
-# name. The broader ROLE words also start ordinary phrases ("Employee Hand Sink"), so after
-# them we only mask a known first name.
-_TITLE_WORDS = (r"owner|manager|pic|p\.i\.c\.?|chef|supervisor|operator|person in charge|commissioner|"
+# After a TITLE, two capitalized words are treated as a name. The broader ROLE words also start
+# ordinary phrases ("Employee Hand Sink"), so after them we only mask a known first name.
+_TITLE_WORDS = (r"owner|manager|mgr|pic|p\.i\.c\.?|chef|supervisor|operator|person in charge|commissioner|"
                 r"inspector|bfd|contractor|gm|cfpm|director|officer|president|captain|landlord|instructor")
-_ROLE_WORDS = _TITLE_WORDS + r"|contact|isd|cfm|employee|cook|bartender|server|plumber|exterminator|technician|tech|principal"
-_SEP = r"\s*[-:,(]*\s*"       # "PIC: Jane", "GM(Jane", "owner - Jane"
-_CAP = r"[A-Z][a-z'\-]{1,}"    # one capitalized word
+_ROLE_WORDS = _TITLE_WORDS + (r"|contact|isd|cfm|employee|cook|bartender|server|plumber|exterminator|"
+                              r"technician|tech|principal|sous|named|name is")
+_SEP = r"\s*[-:,(]*\s*"                          # "PIC: Jane", "GM(Jane", "owner - Jane"
+_CAP = r"[A-Z][a-z'\-]+(?:[A-Z][a-z]+)?"         # Smith, O'Brien, McDonald
+_ANY = r"[A-Za-z][A-Za-z'\-]+"                   # any case: for dictionary look-ups and ALL CAPS text
+_PERSON_VERB = (r"stated|states|said|says|indicated|informed|agreed|arrived|explained|claims|claimed|told|"
+                r"was present|is present|was not|is not|is certified|is the|was the|will|at time|on site|onsite")
 
-_HONORIFIC = re.compile(rf"\b(Mr|Mrs|Ms|Miss|Dr)\b\.?\s+{_CAP}(?:\s+{_CAP})?")
-# "owner Jane Doe", "Commissioner John Roe", "GM(Jane Doe": a role word, then two capitalized words.
-_ROLE_FULL = re.compile(rf"(?i:\b(?:{_TITLE_WORDS})\b(?:\s+is|\s+was|\s+named)?){_SEP}({_CAP})\s+({_CAP})")
-# "PIC Jane": a role word, then one word that is a known first name.
-_ROLE_FIRST = re.compile(rf"(?i:\b(?:{_ROLE_WORDS})\b(?:\s+is|\s+was|\s+named)?){_SEP}({_CAP})\b()")
+_HONORIFIC = re.compile(rf"(?i:\b(?:Mr|Mrs|Ms|Miss|Dr)\b\.?)\s+{_CAP}(?:\s+{_CAP})?")
+# "owner Jane Doe", "Commissioner John Roe", "GM(Jane Doe": a title, then two capitalized words.
+_TITLE_FULL = re.compile(rf"(?i:\b(?:{_TITLE_WORDS})\b(?:\s+is|\s+was|\s+named)?){_SEP}({_CAP})\s+({_CAP})")
+# "PIC and owner of restaurant: Jane Doe": a title, a few words, a colon, then two capitalized words.
+_TITLE_COLON = re.compile(rf"(?i:\b(?:{_TITLE_WORDS})\b)[^.|:]{{0,30}}:\s*({_CAP})\s+({_CAP})")
+# "owner of the building Jane Doe"
+_TITLE_OF = re.compile(rf"(?i:\b(?:{_TITLE_WORDS})\s+of\s+(?:the\s+)?(?:building|restaurant|establishment|business|"
+                       rf"property|store)\b)\s*[:,\-]?\s*({_CAP})\s+({_CAP})")
+# "PIC Jane stated", "Manager (Jane) at time of inspection": a title, one capitalized word, a person verb.
+_TITLE_VERB = re.compile(rf"(?i:\b(?:{_TITLE_WORDS})\b){_SEP}({_CAP})()(?=\s*\)|\s+(?i:{_PERSON_VERB})\b)")
+# "PIC jane", "cook MARIA": a role word, then a known first name in any case.
+_ROLE_FIRST = re.compile(rf"(?i:\b(?:{_ROLE_WORDS})\b(?:\s+is|\s+was|\s+named)?){_SEP}({_ANY})\b()")
 # "spoke with Chris", "per John": one capitalized word is enough to be a name here.
 _SPOKE = re.compile(
     rf"(?i:\b(?:spoke|speak|spoken|speaking|talked|met|discussed)\s+(?:with|to)(?:\s+the)?|\bper)\s+({_CAP})(\s+{_CAP})?")
-# "certificate posted for Jane Doe", "certified ... in the name of Jane Doe"
+# "spoke with maria": the same context, with a known first name in any case.
+_SPOKE_FIRST = re.compile(
+    rf"(?i:\b(?:spoke|speak|spoken|speaking|talked|met|discussed)\s+(?:with|to)(?:\s+the)?)\s+({_ANY})\b()")
+# "certificate posted for Jane Doe", "CERTIFICATE POSTED FOR JANE DOE"
 _CERT = re.compile(
     rf"(?i:certificat\w*|certified|servsafe|serv safe|allergen\w*|cfpm|food protection manager)[^.|]{{0,60}}?"
-    rf"(?i:\b(?:for|belongs to|issued to|in the name of|held by|name of)\b)\s*[:\-]?\s*({_CAP})\s+({_CAP})")
+    rf"(?i:\b(?:for|belongs to|issued to|in the name of|held by|name of)\b)\s*[:\-]?\s*({_ANY})\s+({_ANY})")
+# "Jane Doe is the certified food protection manager"
+_BEFORE_ROLE = re.compile(rf"\b({_CAP})\s+({_CAP})(?=\s+(?i:is|was)\s+(?i:the\s+|a\s+)?(?i:certified|cfpm|owner|manager|pic|person in charge))")
 # "stated by Scott Doe", "and Wayne Doe": a linking word, then a first name and a second word.
 _LINK_FULL = re.compile(rf"(?i:\b(?:stated(?:\s+by)?|by|and|with|told|from)\s+)({_CAP})\s+({_CAP})")
-# "Jane Doe" anywhere, when the first word is a known first name.
-# The pattern starts at the first name itself; a generic "two capitalized words" pattern would
-# pair "Captain Jane" first and never test "Jane Doe".
-_FULL_NAME = re.compile(r"\b(" + "|".join(sorted(FIRST_NAMES, key=len, reverse=True)) + rf")\s+({_CAP})\b")
+# "Jane Doe" or "JANE DOE" anywhere. The pattern starts at the first name itself; a generic
+# "two capitalized words" pattern would pair "Captain Jane" first and never test "Jane Doe".
+_names_alt = "|".join(sorted(FIRST_NAMES, key=len, reverse=True))
+_FULL_NAME = re.compile(rf"\b({_names_alt})\s+({_CAP})\b")
+_FULL_NAME_UPPER = re.compile(rf"\b({_names_alt.upper()})\s+([A-Z][A-Z'\-]{{2,}})\b")
+_AFTER_MASK = re.compile(rf"\[NAME\](?:'s)?\s+({_CAP})\b")
 _EMAILS = [
     re.compile(r"[\w.\-]+@[\w\-]+(?:\.[\w\-]+)+"),                                       # name@site.com
     re.compile(r"[A-Za-z]+\.[A-Za-z]+\s?@\s?[\w\-]+(?:\s?\.\s?[A-Za-z]{2,4}\b)?"),       # first.last @ site .gov
@@ -90,26 +124,31 @@ _EMAILS = [
 _PHONE = re.compile(r"\(?\b\d{3}\)?[-.\s]{0,3}\d{3}[-.\s]{0,3}\d{4}\b")
 
 
-def _mask_two(m):
-    """Mask the two captured words unless one of them is a known non-name word."""
-    first, second = m.group(1), (m.group(2) or "").strip()
-    if first in _NOT_NAMES or second in _NOT_NAMES:
-        return m.group(0)
+def _masked(m):
+    """The match with everything from the first captured word onward replaced by [NAME]."""
     return m.group(0)[: m.start(1) - m.start(0)] + "[NAME]"
+
+
+def _not_a_name(m):
+    return m.group(1).title() in _NOT_NAMES or (m.group(2) or "").strip().title() in _NOT_NAMES
+
+
+def _mask_two(m):
+    """Mask the captured words unless one of them is a known non-name word."""
+    return m.group(0) if _not_a_name(m) else _masked(m)
 
 
 def _mask_if_first_name(m):
     """Mask only when the first captured word is a known first name."""
-    if m.group(1) not in FIRST_NAMES or (m.group(2) or "").strip() in _NOT_NAMES:
-        return m.group(0)
-    return m.group(0)[: m.start(1) - m.start(0)] + "[NAME]"
+    return _masked(m) if m.group(1).title() in FIRST_NAMES and not _not_a_name(m) else m.group(0)
 
 
 def _mask_if_context_first_name(m):
-    """Same, with the wider name list that is only safe inside a name context."""
-    if m.group(1) not in _CONTEXT_FIRST_NAMES or (m.group(2) or "").strip() in _NOT_NAMES:
-        return m.group(0)
-    return m.group(0)[: m.start(1) - m.start(0)] + "[NAME]"
+    """Same, inside a name context: any case for known first names, and the wider list of
+    ambiguous names ("Sam", "Rich") when the word is capitalized."""
+    word = m.group(1)
+    known = word.title() in FIRST_NAMES or (not word.islower() and word.title() in _CONTEXT_FIRST_NAMES)
+    return _masked(m) if known and not _not_a_name(m) else m.group(0)
 
 
 def mask_personal_info(text):
@@ -120,12 +159,17 @@ def mask_personal_info(text):
         text = rx.sub("[EMAIL]", text)
     text = _PHONE.sub("[PHONE]", text)
     text = _HONORIFIC.sub("[NAME]", text)
-    text = _CERT.sub(_mask_two, text)
-    text = _ROLE_FULL.sub(_mask_two, text)
-    text = _SPOKE.sub(_mask_two, text)
-    text = _LINK_FULL.sub(_mask_if_context_first_name, text)
-    text = _ROLE_FIRST.sub(_mask_if_context_first_name, text)
-    return _FULL_NAME.sub(_mask_if_first_name, text)
+    # Full names first, so a later single-word pattern cannot mask "Jane" and leave "Doe" behind.
+    for rx in (_FULL_NAME, _FULL_NAME_UPPER):
+        text = rx.sub(_mask_if_first_name, text)
+    # _TITLE_FULL runs twice: in "manager Assistant Commissioner Jane Doe" the first pass stops
+    # at "manager Assistant Commissioner" and only the second reaches the name.
+    for rx in (_CERT, _TITLE_FULL, _TITLE_FULL, _TITLE_COLON, _TITLE_OF, _TITLE_VERB, _BEFORE_ROLE, _SPOKE):
+        text = rx.sub(_mask_two, text)
+    for rx in (_LINK_FULL, _ROLE_FIRST, _SPOKE_FIRST):
+        text = rx.sub(_mask_if_context_first_name, text)
+    # "Jane Marie Doe" leaves "[NAME] Doe": absorb a capitalized word right after a mask.
+    return _AFTER_MASK.sub(lambda m: m.group(0) if m.group(1).title() in _NOT_NAMES else "[NAME]", text)
 
 
 # --- Step 1: clean ---------------------------------------------------------
@@ -268,6 +312,28 @@ def add_history_features(insp, cutoff_days=REINSPECTION_DAYS):
     df["year"] = df["date"].dt.year
     df["is_takeout"] = df["descript"].str.contains("Take Out", na=False).astype(int)
     return df
+
+
+def candidate_memory_features(full):
+    """Improvement-loop candidates (see docs/DECISIONS.md, IL.1): a longer memory of routine violations.
+
+    r3_mean_viol         = mean violations over the last 3 routine inspections before this one
+    prev2_routine_n_viol = violations at the routine inspection before the last one
+    Returns a table keyed by inspection_id. Same no-leak pattern as the last_routine_* features:
+    statistics over routine rows, then shift(1) over all visits of the license, then carry forward.
+    """
+    df = full.sort_values(["licenseno", "date"]).reset_index(drop=True)
+    lic = df["licenseno"]
+    r = df[df["is_reinspection"] == 0].groupby("licenseno")["n_viol"]
+    mean3 = r.transform(lambda s: s.rolling(3, min_periods=1).mean())   # this routine visit and the two before
+    previous = r.shift(1)                                               # the routine visit before this one
+
+    def as_of_last_routine(values):
+        return values.reindex(df.index).groupby(lic).shift(1).groupby(lic).ffill()
+
+    return pd.DataFrame({"inspection_id": df["inspection_id"],
+                         "r3_mean_viol": as_of_last_routine(mean3),
+                         "prev2_routine_n_viol": as_of_last_routine(previous)})
 
 
 # --- Step 4: split and filter -------------------------------------------------

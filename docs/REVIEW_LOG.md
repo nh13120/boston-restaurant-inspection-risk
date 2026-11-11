@@ -24,3 +24,19 @@ Verdict: 0 BLOCKER, 4 MAJOR, 8 MINOR. All six checklist items passed except priv
 | 12 | MINOR | Notebooks 02 and 03 had already run on the table under review. | Reran both after the fixes. |
 
 Deliberately left: the 30-day cutoff itself (finding 8), which the brief fixes.
+
+### Round 2
+
+Same reviewer prompt, fresh subagent. Verdict: 0 BLOCKER, 1 MAJOR, 6 MINOR. The reviewer recomputed 20 feature columns and `prior_comments` for all 58,564 model rows and all 161,962 inspections with no mismatch, confirmed that the snapshot hash matches the reference and that `build_model_table` rebuilds both saved tables exactly, and found no escaped emails or phones.
+
+| # | Tag | Finding | What we did |
+|---|---|---|---|
+| 1 | MAJOR | Name masking still missed at least 94 comments: common names absent from the list, names in capitals, "PIC Tom stated", "owner of restaurant: X Y". Notebook 01 said no personal details remained, which was false. | Added about 350 common first names, capitalized and lower-case matching in name contexts, five more contexts, and a cleanup for surnames left after a mask. With the reviewer's own name list, 3 name-like strings remain in 324,528 comment pieces. Rewrote the notebook text to say the masking is best effort. |
+| 2 | MINOR | The raw snapshot holds unmasked comments. | It stays git-ignored. The README says `data/` must never be published. |
+| 3 | MINOR | 1,807 model rows follow a failed visit by more than 30 days, and many are late re-inspections. | Limitation logged (D2.3). Notebook 04 reports the results without those rows. We did not filter on `n_rechecked_ok`, which is outcome-side. |
+| 4 | MINOR | Comment text is sometimes edited after the inspection date (13 model rows mention a later date). | Logged as a limitation (G1.7). The final model does not use text. |
+| 5 | MINOR | Some attributes are as of the pull date, and the feature refusal list was incomplete. | Added `license_issue_date`, `businessname`, `descript`, `inspection_id` and `licenseno` to `NEVER_FEATURES`. The dictionary notes the 2006 start of the record. |
+| 6 | MINOR | The snapshot check trusted the metadata file. | `pull_inspections` now hashes the parquet content on load and compares it with `docs/pull_metadata.json`. |
+| 7 | MINOR | "Pass" means "no follow-up required", not "no violations". | Stated in the data dictionary, and in the README. |
+
+Deliberately left: the 30-day rule and the label definition, which the brief fixes.

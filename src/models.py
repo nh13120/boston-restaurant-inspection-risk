@@ -29,7 +29,8 @@ HISTORY_FEATURES = NUM_FEATURES + CAT_FEATURES
 # Columns that describe the inspection being predicted, or today's license status.
 # Using any of them as a feature would be leakage, so fitting refuses them.
 NEVER_FEATURES = {"label_fail", "result", "result_codes", "n_viol", "n_lvl1", "n_lvl2", "n_lvl3",
-                  "n_rechecked_ok", "comments", "licstatus", "is_reinspection", "split", "year", "date"}
+                  "n_rechecked_ok", "comments", "licstatus", "is_reinspection", "split", "year", "date",
+                  "license_issue_date", "businessname", "descript", "inspection_id", "licenseno"}
 assert not NEVER_FEATURES & set(HISTORY_FEATURES)
 
 # Lecture 6 style: a small, explicit grid (3 x 2 x 2 = 12 combinations).

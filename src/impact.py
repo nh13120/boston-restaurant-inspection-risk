@@ -179,3 +179,33 @@ def top_drivers(model, X, rows, text_features=(), n=3):
         top = c[c > 0].sort_values(ascending=False).head(n)
         out.append("; ".join(_describe(f, rows.loc[idx]) for f in top.index))
     return out
+
+
+def plot_impact_bar(impact, best_label, title, path=None):
+    """Failures found per year at fixed capacity: random order vs. the rule vs. the model."""
+    import matplotlib.pyplot as plt
+    from src.evaluate import MODEL_COLORS, set_plot_style
+
+    set_plot_style()
+    value = impact.set_index("quantity")["value"]
+    rows = [("Random order\n(today)", value["Failures found per year, random order"], MODEL_COLORS["B0_random"]),
+            ("Past failure rate\n(rule)", value["Failures found per year, past-failure-rate rule (B1)"], MODEL_COLORS["B1_past_fail_rate"]),
+            (best_label, value[[q for q in value.index if q.startswith("Failures found per year, ") and "random" not in q and "B1" not in q][0]],
+             MODEL_COLORS["M1_lgbm"])]
+    fig, ax = plt.subplots(figsize=(8.5, 5.5))
+    bars = ax.bar([r[0] for r in rows], [r[1] for r in rows], color=[r[2] for r in rows])
+    for bar, (_, v, _) in zip(bars, rows):
+        ax.text(bar.get_x() + bar.get_width() / 2, v + 12, f"{v:,.0f}", ha="center", fontsize=15, fontweight="bold")
+    extra = rows[2][1] - rows[0][1]
+    ax.text(0.02, 0.95, f"+{extra:,.0f} failures found per year vs. random order,\nwith the same number of visits",
+            transform=ax.transAxes, va="top", fontsize=13, color=MODEL_COLORS["M1_lgbm"], fontweight="bold")
+    visits = value[[q for q in value.index if q.startswith("Visits per year")][0]]
+    ax.set_ylabel("Failed inspections found per year")
+    ax.set_ylim(0, max(r[1] for r in rows) * 1.3)
+    ax.set_title(title)
+    ax.text(0.0, -0.2, f"Same capacity in every bar: {visits:,.0f} visits per year (20% of routine inspections).",
+            transform=ax.transAxes, fontsize=11)
+    fig.tight_layout()
+    if path:
+        fig.savefig(path, bbox_inches="tight")
+    return fig

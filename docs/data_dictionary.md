@@ -14,7 +14,7 @@ Source: [Food Establishment Inspections](https://data.boston.gov/dataset/food-es
 | `licenseno` | text | License number of the establishment. |
 | `date` | date | Inspection date in Boston time (the source stores UTC). |
 | `year`, `split` | int, text | Calendar year and its split: `train` (2016 to 2022), `val` (2023), `test` (2024 onward). In the full table, rows before 2016 are `history`. |
-| `label_fail` | 0/1 | The outcome to predict. 1 if the inspection carried any fail code (see `DECISIONS.md` D1.2). |
+| `label_fail` | 0/1 | The outcome to predict. 1 if the inspection carried any fail code (see `DECISIONS.md` D1.2). A 0 means "no follow-up required", not "no violations": it includes `HE_Filed` visits, which usually list one or two minor violations. |
 | `result`, `result_codes` | text | `fail` or `pass`, and the original codes joined with a vertical bar. |
 
 ## Features (known before the inspection)
@@ -23,7 +23,7 @@ Source: [Food Establishment Inspections](https://data.boston.gov/dataset/food-es
 
 | Column | Type | Meaning |
 |---|---|---|
-| `prior_n` | int | Number of earlier inspections on record (since 2006). |
+| `prior_n` | int | Number of earlier inspections on record. The record starts in April 2006, so the count is understated for restaurants that opened before then. |
 | `prior_n_3y` | int | Number of earlier inspections in the previous three years. |
 | `is_first` | 0/1 | 1 if this is the license's first inspection on record. |
 | `prior_fail_rate` | float | Share of earlier inspections that failed. Missing for a first inspection. |

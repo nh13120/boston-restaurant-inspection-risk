@@ -19,16 +19,24 @@ SEED = 42
 TARGET = "label_fail"
 
 # Everything here is known before the inspection (see docs/data_dictionary.md).
-NUM_FEATURES = ["prior_n", "is_first", "prior_fail_rate", "last_fail", "last_n_viol", "last_n_lvl3",
+NUM_FEATURES = ["prior_n", "prior_n_3y", "is_first", "prior_fail_rate", "prior_routine_fail_rate",
+                "last_fail", "last_n_viol", "last_n_lvl3",
+                "last_routine_fail", "last_routine_n_viol", "last_routine_n_lvl3",
                 "days_since_last", "license_age_days", "month", "is_takeout"]
 CAT_FEATURES = ["neighborhood", "zip"]
 HISTORY_FEATURES = NUM_FEATURES + CAT_FEATURES
+
+# Columns that describe the inspection being predicted, or today's license status.
+# Using any of them as a feature would be leakage, so fitting refuses them.
+NEVER_FEATURES = {"label_fail", "result", "result_codes", "n_viol", "n_lvl1", "n_lvl2", "n_lvl3",
+                  "n_rechecked_ok", "comments", "licstatus", "is_reinspection", "split", "year", "date"}
+assert not NEVER_FEATURES & set(HISTORY_FEATURES)
 
 # Lecture 6 style: a small, explicit grid (3 x 2 x 2 = 12 combinations).
 LGBM_GRID = {
     "num_leaves": [7, 15, 31],
     "learning_rate": [0.02, 0.05],
-    "n_estimators": [300, 1000],
+    "n_estimators": [100, 500],   # an upper limit: early stopping can use fewer trees
 }
 # n_jobs=1 and deterministic=True make reruns give identical numbers; the data is small enough.
 LGBM_FIXED = dict(random_state=SEED, verbosity=-1, n_jobs=1, deterministic=True, force_row_wise=True)
@@ -37,6 +45,8 @@ LGBM_FIXED = dict(random_state=SEED, verbosity=-1, n_jobs=1, deterministic=True,
 def load_model_table(path="../data/processed/model_table.parquet"):
     """Load the table and mark the categorical columns, so every split shares the same categories."""
     df = pd.read_parquet(path)
+    # Plain floats: LightGBM rejects the Arrow-backed integer columns that pandas 3 can produce.
+    df[NUM_FEATURES] = df[NUM_FEATURES].astype("float64")
     for col in CAT_FEATURES:
         df[col] = df[col].astype("category")
     return df
@@ -73,12 +83,13 @@ def fit_logreg(train):
 # --- LightGBM ----------------------------------------------------------------
 def fit_lgbm(train, features, params, val=None):
     """Fit one LightGBM. With `val`, training stops early when validation stops improving."""
+    assert not NEVER_FEATURES & set(features), "outcome-side column used as a feature"
     model = LGBMClassifier(**LGBM_FIXED, **params)
     if val is None:
         return model.fit(train[features], train[TARGET])
     return model.fit(
         train[features], train[TARGET],
-        eval_set=[(val[features], val[TARGET])], eval_metric="auc",
+        eval_X=val[features], eval_y=val[TARGET], eval_metric="auc",
         callbacks=[lgb.early_stopping(stopping_rounds=50, verbose=False)],
     )
 

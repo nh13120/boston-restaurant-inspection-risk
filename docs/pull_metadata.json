@@ -1,0 +1,26 @@
+{
+  "pulled_at_utc": "2026-11-11T21:37:09+00:00",
+  "source": "https://data.boston.gov/dataset/food-establishment-inspections",
+  "license": "Open Data Commons Public Domain Dedication and License (PDDL)",
+  "api_url": "https://data.boston.gov/api/3/action/datastore_search_sql",
+  "resource_id": "4582bec6-2b4f-4f9e-bc55-cbaa73117f4c",
+  "sql": "SELECT \"_id\", \"licenseno\", \"businessname\", \"descript\", \"licstatus\", \"result\", \"resultdttm\", \"viol_level\", \"viol_status\", \"violdesc\", \"comments\", \"issdttm\", \"zip\", \"city\" FROM \"4582bec6-2b4f-4f9e-bc55-cbaa73117f4c\" WHERE \"resultdttm\" < '2026-11-11' AND \"descript\" LIKE 'Eating & Drinking%' ORDER BY \"_id\" LIMIT <page> OFFSET <n>",
+  "row_count": 785315,
+  "content_sha256": "2b1b7874d873d7bd03241d5a3c45d3764571113a088c21875582705d9281bda8",
+  "columns": [
+    "_id",
+    "licenseno",
+    "businessname",
+    "descript",
+    "licstatus",
+    "result",
+    "resultdttm",
+    "viol_level",
+    "viol_status",
+    "violdesc",
+    "comments",
+    "issdttm",
+    "zip",
+    "city"
+  ]
+}

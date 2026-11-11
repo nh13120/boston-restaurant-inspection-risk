@@ -1,0 +1,56 @@
+{
+  "seed": 42,
+  "capacity_k": 0.2,
+  "selection_metric": "precision_at_k on validation (2023)",
+  "history_features": [
+    "prior_n",
+    "prior_n_3y",
+    "is_first",
+    "prior_fail_rate",
+    "prior_routine_fail_rate",
+    "last_fail",
+    "last_n_viol",
+    "last_n_lvl3",
+    "last_routine_fail",
+    "last_routine_n_viol",
+    "last_routine_n_lvl3",
+    "days_since_last",
+    "license_age_days",
+    "month",
+    "is_takeout",
+    "neighborhood",
+    "zip"
+  ],
+  "B0_random": {
+    "seed": 42
+  },
+  "B1_past_fail_rate": {
+    "first_inspection_fallback": "base rate of the fitting data"
+  },
+  "B2_logreg": {
+    "pipeline": "median impute with missing flags -> standard scale -> LogisticRegression(max_iter=2000)"
+  },
+  "M1_lgbm": {
+    "features": "history",
+    "num_leaves": 7,
+    "learning_rate": 0.02,
+    "n_estimators": 346
+  },
+  "M2_lgbm_text": {
+    "features": "history + 32 text PCs + has_prior_comments",
+    "num_leaves": 31,
+    "learning_rate": 0.02,
+    "n_estimators": 93,
+    "encoder": "sentence-transformers/all-MiniLM-L6-v2",
+    "max_tokens": 256,
+    "pooling": "mean over attention mask",
+    "pca_components": 32
+  },
+  "lgbm_fixed": {
+    "random_state": 42,
+    "verbosity": -1,
+    "n_jobs": 1,
+    "deterministic": true,
+    "force_row_wise": true
+  }
+}

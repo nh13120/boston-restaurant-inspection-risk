@@ -9,4 +9,4 @@ Same yearly total, found earlier: about 350 more failures in the first 20% of vi
 
 Caveats: "random order = today" is assumed. Model adds 1 point over logistic regression, text 1 more. Zip code is an input.
 
-Needed from us: a source on ISD's scheduling, a cost per failure, and a decision on publishing the named priority list.
+Needed: a source on ISD's scheduling, a cost per failure, a decision on the named priority list.

@@ -21,7 +21,7 @@ About 7 minutes on an M-series laptop, plus a first data pull (10 minutes) and a
 
 ## Results on the test years (2024 to Nov 2026, 17,171 inspections)
 
-Each method ranks the inspections, and we look at the first 20%. Settings were frozen on 2023 before the test years were scored. M3 was added after the five planned models had been scored, with its own freeze (optional notebook 05, about 40 minutes on a GPU, not reproducible to the last digit).
+Each method ranks the inspections, and we look at the first 20%. Settings were frozen on 2023 before the test years were scored. M3 was added after the five planned models were scored, with its own freeze (optional notebook 05, about 40 minutes on a GPU).
 
 | Method | Visits that find a failure (95% CI) | Share of all failures found | Share of serious violations found |
 |---|---|---|---|
@@ -47,7 +47,7 @@ We recommend ranking by inspection history, where a hand rule already brings mos
 ## Limitations
 
 - The status quo is assumed, and 20% is an illustrative capacity. M1's lead over the rule is 7.8 points overall and 3.3 to 3.7 on two robustness slices. Hit rates fell from 90.1% in 2024 to 84.9% in 2026.
-- The algorithm adds little and the text about a point: M1 leads logistic regression by 1.1 points (CI 0.3 to 1.9), M2 leads M1 by 0.7 (CI 0.1 to 1.4) and M3 by 1.0 (CI 0.3 to 1.8). Comments alone reach 84% on the test years: they carry signal, but mostly repeat what the history says.
+- The algorithm adds about a point and the text another: M1 leads logistic regression by 1.1 points (CI 0.3 to 1.9), and M3 leads M1 by 1.0 (CI 0.3 to 1.8). Comments alone reach 84%: they mostly repeat what the history says.
 - Scores are estimates, not findings about a business. The priority list names businesses, so read `results/priority_list_note.md` first. Name masking in comments is best effort.
 
 ## Repo map

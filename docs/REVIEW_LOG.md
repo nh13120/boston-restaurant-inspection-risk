@@ -213,3 +213,26 @@ Same prompt, fresh subagent. Verdict: 0 BLOCKER, 0 MAJOR, 11 MINOR. Gate 3 passe
 | B9 | MINOR | No uncertainty on timing and severity numbers. | Left open (G4.7). |
 | B10 | MINOR | Named-business risk list. | Flagged for the team before the repo goes public (G4.4). |
 | B11 | MINOR | No ceiling reference. | The gains chart shows the best possible curve (34% at 20%). |
+
+### Round 3 (last)
+
+**Reproducibility tester.** Verdict: 0 BLOCKER, 0 MAJOR, 5 MINOR; `results/results.csv` identical: yes. 41 of 41 files in `results/` and `preds/` byte-identical in two runs (6 min 17 s and 6 min 24 s), the second with a fresh encoder download and no cached intermediate files. Minors: the snapshot instruction (kept short: get the parquet from the repo owner), figures not listed (the README now says 8 figures), the lock file not mentioned for an exact install (it is, in the setup block of earlier versions and in `docs/`), exact match verified on Apple Silicon only (now stated), and the committed notebook 03 run with cached embeddings (left).
+
+**Course grader.** Scores: Q1 4/5, Q2 4/5, Q3 4/5, Q4 3/5. Verdict: 0 BLOCKER, 4 MAJOR, 12 MINOR. The loop ends after three rounds, so these fixes were made without another review.
+
+| # | Tag | Finding | What we did |
+|---|---|---|---|
+| 1 | MAJOR | The README was still two printed pages. | Cut again, to about 570 words of prose plus one table and one code block. |
+| 2 | MAJOR | The "why it matters" numbers were compared only with random or actual order; against a hand rule the model adds little. | The README table and text now show the hand-rule values (33% to 39% of serious violations against 40%, 0.8 to 0.9 weeks against 1.1) and the lead over the rule on the robustness slices. `impact.csv` has the rows behind them. |
+| 3 | MAJOR | The recommended model (without location) is not the one evaluated or shipped. | The README and the priority-list note say so in plain words, with the Dorchester and Roxbury figures. Scoring the variant on test is left to the team (G4.8). |
+| 4 | MAJOR | The current process is unverified and unsourced. | Stated in the README's first paragraph. Left for the team: it needs a source from ISD. |
+| 5 | MINOR | References to an absent "brief"; `DECISIONS.md` claimed README statements that were only implied; the checklist cited this log. | `DECISIONS.md` opens with a definition of the brief, the two claims are corrected, and the checklist points to notebooks and result files. |
+| 6 | MINOR | "40 to 95" was not traceable to rows. | Now "42 to 94", with all three numbers in `impact.csv`. |
+| 7 | MINOR | Thin text design, no intervals on some impact numbers, no figure for neighborhoods or timing, named businesses in the list. | Left open and listed in G4.8 for the team. |
+
+## Summary of what each gate caught
+
+- Gate 1 (data): no leakage in any round. It caught personal names that escaped masking (three rounds of fixes), history features that pointed at the wrong visit, a history cut at 2016 that made 2016 rows look like first inspections, and a data pull that could not be repeated.
+- Gate 2 (method): no leakage and no test peeking. It caught a business rule that was handicapped by its fallback value (B1 went from 69% to 80% on validation), a final-model rule that turned on a single inspection, and a "text helps" file that the numbers did not support.
+- Gate 3 (results): every number reproduced. It caught impact wording that implied additional failures when the gain is earlier discovery, and a "random order" status quo presented as fact.
+- Gate 4 (reproduction and grading): byte-identical reproduction in all three rounds. It caught one wrong attribution in the README, the missing severity translation, the location effect, and a README that was too long.

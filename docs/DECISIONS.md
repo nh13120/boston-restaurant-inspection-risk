@@ -2,6 +2,8 @@
 
 Each entry: what we chose, the alternatives, and one line of reasoning.
 
+"The brief" in this log is the team's project plan, written before any data was pulled. It fixed the problem, the five models (B0, B1, B2, M1, M2), the metrics at a 20% capacity, the time split, the hard rules (no leakage, tune on validation only, test scored after a freeze, no owner names) and the review gates. The gates were independent reviews run after each stage. Their findings are in `REVIEW_LOG.md`.
+
 ## Phase 0: setup
 
 **D0.1 Environment.** Chose a local `.venv` built with Python 3.13. Alternative: reuse the class venv at `ai-edge/ai-edge.venv`. That folder does not exist on this machine, so there was nothing to reuse.
@@ -108,7 +110,7 @@ No third proposal was made, and there is no second round, because more rounds wo
 
 **G2.7 Refit on train + validation for the test run.** The brief asks for this, PCA included. "PCA fitted on train only" therefore means: on validation, fitted on 2016 to 2022; for the test run, fitted on 2016 to 2023. No test row is ever used to fit anything. The frozen config states it.
 
-**G2.8 A second simple rule, for honesty.** Ranking by the number of violations at the last routine inspection scores 84.4% on validation, 4 points above B1. B1 stays the business-rule benchmark because the brief defines it. Notebooks 02 and 04 show the second rule as a sensitivity row, and the README says that the gain "over the rule" depends on the rule.
+**G2.8 A second simple rule, for honesty.** Ranking by the number of violations at the last routine inspection scores 84.4% on validation, 4 points above B1. B1 stays the business-rule benchmark because the brief defines it. Notebooks 02 and 04 show the second rule as a sensitivity row, and the README quotes the gain over a hand rule as a range (42 to 94 failed inspections a year).
 
 **G2.4 M2 depends on the device.** Embeddings computed on `mps` and on CPU differ in the sixth decimal. That is enough to change which of M2's near-tied grid settings wins and to move its hit rate by about 0.3 points. The conclusion (text adds nothing measurable) holds on both. We keep `mps` as the brief asks, pin the encoder revision, and state the caveat in the frozen config and in notebook 03. M1, the final model, does not use embeddings and reruns bit for bit.
 
@@ -130,7 +132,7 @@ No third proposal was made, and there is no second round, because more rounds wo
 
 **D6.3 Notebook 04 was executed more than once.** The reruns changed figure titles and labels, explanatory text, and added the robustness and sensitivity rows that the Gate 3 review asked for (G3.1 to G3.4). The frozen settings, the fitted models and every test prediction are identical each time: the pipeline is deterministic, and the reviewer's own refit of M1 from the frozen settings matched the saved predictions exactly.
 
-**D6.4 Robustness.** Without the 693 test inspections whose previous visit failed (likely late follow-ups), the order of the models is unchanged, but B1 rises to 84.8% and M1's lead over it narrows from 7.8 to 3.7 points. Counting each restaurant once (its first test inspection, 3,911 rows), M1 leads B1 by 3.3 points (CI 1.1 to 5.6). The README says so. Ranked year by year, M1 scores 90.1%, 88.9% and 84.9% for 2024, 2025 and 2026.
+**D6.4 Robustness.** Without the 693 test inspections whose previous visit failed (likely late follow-ups), the order of the models is unchanged, but B1 rises to 84.8% and M1's lead over it narrows from 7.8 to 3.7 points. Counting each restaurant once (its first test inspection, 3,911 rows), M1 leads B1 by 3.3 points (CI 1.1 to 5.6). The README quotes both slices. Ranked year by year, M1 scores 90.1%, 88.9% and 84.9% for 2024, 2025 and 2026.
 
 ## Phase 7: impact
 
@@ -180,3 +182,17 @@ No third proposal was made, and there is no second round, because more rounds wo
 - `results/neighborhood_table.csv` gains a comparison column under a hand rule that ignores location. With it, Dorchester and Roxbury both get about 24% of their inspections in the first 20% of visits, against 46% and 19% under M1.
 - The gains chart shows the best possible curve: a perfect ranking would find 34% of failures in the first 20% of visits, and M1 finds 30%.
 - Left open: intervals for the timing and severity numbers, and a figure for the neighborhood table.
+
+**G4.8 Round 3, the last one.** No blocker. The tester reproduced all 41 output files byte for byte in two runs, one of them with a fresh encoder download and no cached intermediate files. The grader scored Q1 4, Q2 4, Q3 4 and Q4 3 out of 5. Changes made after this round, without another review:
+
+- The README is cut to one page and its results table now shows, for each method, the share of all failures and of all serious violations found in the first 20% of visits. The AUC column moved out (it stays in `results/results.csv`).
+- `impact.csv` carries the hand-rule comparators that the README quotes: 0.8 to 0.9 weeks sooner with a hand rule against 1.1 with M1, 33% to 39% of serious violations against 40%, and the 42 and 74 that make up "42 to 94 more than a hand rule". The honest reading is that a hand rule on inspection history brings most of the gain and the model adds the rest.
+- The recommendation to drop location now says that it was checked on 2023 only and that the numbers and the priority list include location. The note next to the list says the same.
+
+Left as is, for the team to decide:
+
+- How ISD orders visits today is still an assumption. A sourced description of ISD's scheduling would lift the first and fourth graded questions more than any analysis here.
+- The text model is a frozen encoder on the previous visit's comments. A variant on the last routine inspection's comments, with a bag-of-words comparison, would give the deep-learning part a fairer chance. It needs new models.
+- The model without location was not scored on the test years, because the settings were frozen before the test. Scoring it now and labelling it as after the fact is an option.
+- Timing, severity and after-a-pass numbers have no intervals (the after-a-pass group is 299 inspections).
+- `REVIEW_LOG.md` and `STATUS.md` are process notes. They can leave the repo before it goes public.

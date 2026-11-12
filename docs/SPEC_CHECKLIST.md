@@ -17,7 +17,7 @@ Source: `Project.pdf`, sections "From a problem to an AI solution", "Project 1: 
 |---|---|---|
 | P1 | Is there a named stakeholder (Boston ISD) and a decision they make (which restaurants to inspect first)? | README |
 | P2 | Is the prediction task well defined: one unit of prediction, a stated outcome, stated inputs? | README, `docs/data_dictionary.md` |
-| P3 | Are the inputs limited to what ISD would know before the inspection (no leakage)? | `src/features.py`, Gate 1 |
+| P3 | Are the inputs limited to what ISD would know before the inspection (no leakage)? | `src/features.py`, `docs/REVIEW_LOG.md` (Gate 1) |
 | P4 | Is the scope focused enough to analyze in a few weeks, and is a simple model preferred when it performs as well? | `docs/DECISIONS.md` |
 
 ## Data
@@ -25,7 +25,7 @@ Source: `Project.pdf`, sections "From a problem to an AI solution", "Project 1: 
 | # | Check | Where |
 |---|---|---|
 | D1 | Is the dataset public, with its source, license and pull date recorded? | README, `data/raw/pull_metadata.json` |
-| D2 | Is the repo free of confidential, proprietary or personally identifiable information (no owner names in any saved file)? | `src/data_pull.py`, Gate 1 |
+| D2 | Is the repo free of confidential, proprietary or personally identifiable information (no owner names in any saved file)? | `src/data_pull.py`, `docs/REVIEW_LOG.md` (Gate 1) |
 | D3 | Is the data preparation documented and reproducible (cleaning, collapsing to one row per inspection, label, features)? | notebook 01, `src/features.py` |
 | D4 | Is there a data dictionary? | `docs/data_dictionary.md` |
 
@@ -34,19 +34,19 @@ Source: `Project.pdf`, sections "From a problem to an AI solution", "Project 1: 
 | # | Check | Where |
 |---|---|---|
 | M1 | Does the project combine machine learning on tabular data with deep learning on unstructured data? | notebook 03 (LightGBM + BERT embeddings) |
-| M2 | Is model selection rigorous: a time-based split, tuning on validation only, the test period scored once? | notebook 03, `docs/FROZEN_CONFIG.json`, Gate 2 |
+| M2 | Is model selection rigorous: a time-based split, tuning on validation only, the test period scored once? | notebook 03, `docs/FROZEN_CONFIG.json`, `docs/REVIEW_LOG.md` (Gate 2) |
 | M3 | Is there a predictive baseline (logistic regression)? | notebook 02 |
 | M4 | Is there a business-rule benchmark (rank by past failure rate) and a status-quo benchmark (random order)? | notebook 02 |
 | M5 | Are alternative modeling approaches compared (tabular only vs. tabular plus text)? | notebook 03 |
 | M6 | Do reported metrics carry uncertainty (bootstrap confidence intervals)? | `results/results.csv` |
-| M7 | Is the work reproducible (fixed seed, relative paths, notebooks pass Restart & Run All)? | Gate 4 |
+| M7 | Is the work reproducible (fixed seed, relative paths, notebooks pass Restart & Run All)? | `docs/REVIEW_LOG.md` (Gate 4) |
 
 ## Impact and communication
 
 | # | Check | Where |
 |---|---|---|
 | I1 | Is impact quantified in policy terms (extra failures found per year, inspections saved) at a fixed capacity? | `results/impact.csv` |
-| I2 | Does every impact number trace to the data or a logged assumption, with no invented dollar figures? | `src/impact.py`, Gate 3 |
+| I2 | Does every impact number trace to the data or a logged assumption, with no invented dollar figures? | `src/impact.py`, `docs/REVIEW_LOG.md` (Gate 3) |
 | I3 | Are there visualizations that show performance and impact? | `results/figures/` |
 | I4 | Are limitations stated honestly? | README |
 

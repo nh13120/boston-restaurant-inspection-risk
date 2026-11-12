@@ -12,7 +12,13 @@ import numpy as np
 import pandas as pd
 import torch
 from sklearn.decomposition import PCA
+from huggingface_hub.utils import disable_progress_bars
 from transformers import AutoModel, AutoTokenizer
+from transformers.utils import logging as hf_logging
+
+disable_progress_bars()            # keep download progress bars out of executed notebooks
+hf_logging.disable_progress_bar()
+hf_logging.set_verbosity_error()
 
 SEED = 42
 MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"

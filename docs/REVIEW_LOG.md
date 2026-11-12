@@ -147,3 +147,36 @@ Same prompt, fresh subagent. Verdict: 0 BLOCKER, 0 MAJOR, 11 MINOR. Gate 3 passe
 | 9 | MINOR | 61.7% in the log against 61.6% in the table; same-day ties broken by row order. | Same-day ties are now averaged, as in `evaluate()`: 61.5% and +324. Log corrected. |
 | 10 | MINOR | The location caveat did not say how cheap location is to remove. | README: dropping location cost about 0.3 points on validation. |
 | 11 | MINOR | The priority list names real businesses with a risk percentage and no caveat in the file. | Column renamed `estimated_risk_pct`; `results/priority_list_note.md` sits next to the file. Business names stay, as the brief asks. Flagged for the team before the repo goes public. |
+
+## Gate 4: reproducibility tester and course grader (in parallel)
+
+### Round 1
+
+**Reproducibility tester.** Verdict: 0 BLOCKER, 0 MAJOR, 6 MINOR; `results/results.csv` identical: yes. From a fresh clone plus `data/raw/`, following only the README, on a Mac without Homebrew's libomp: all four notebooks ran in 6 min 27 s, and every file in `results/`, `preds/`, `results/figures/` and `data/processed/` (including embeddings recomputed after a fresh encoder download) was byte-for-byte identical to the original.
+
+| # | Tag | Finding | What we did |
+|---|---|---|---|
+| 1 | MINOR | The macOS OpenMP note came after the run block and did not name its prerequisites. | One line inside the setup block, before the notebooks, pointing to `docs/setup_macos.md`, which names the prerequisites. |
+| 2 | MINOR | Runtime wording was ambiguous. | Reworded: notebooks, install and first pull are timed separately. |
+| 3 | MINOR | The README did not say how an outside reader gets the snapshot. | "Ask us for the snapshot to match our numbers exactly." |
+| 4 | MINOR | Figures not named. | The README points to `results/figures/`. |
+| 5 | MINOR | Only top-level packages pinned. | Added `requirements-lock.txt` (full `pip freeze`) and pinned scipy. |
+| 6 | MINOR | `--inplace` leaves a dirty tree; notebook 03 gained thousands of progress-bar lines. | Progress bars silenced. The dirty tree is inherent to `--inplace` and left as is. |
+
+**Course grader.** Scores: Q1 4/5, Q2 4/5, Q3 4/5, Q4 3/5. Verdict: 0 BLOCKER, 3 MAJOR, 12 MINOR. The grader reran the repo (354 s, byte-identical outputs), verified the freeze in git, and checked every README number against `results/`.
+
+| # | Tag | Finding | What we did |
+|---|---|---|---|
+| 1 | MAJOR | Impact translation was thin: no severity, no statement of why earlier matters. | Added serious (level 3) violations found in the first 20% of visits (40% against 20% and 33%), a figure, and failed-inspection-weeks (G4.1). |
+| 2 | MAJOR | The README was not one page and too dense. | Rewritten: OpenMP steps moved to `docs/`, limitations cut to three short bullets, second-order numbers moved to result files. |
+| 3 | MAJOR | Location and the named list: zip is an input, "0.3 points" was not reproducible, and a named risk list sits in a repo meant to be public. | Neighborhood table, a reproducible validation check without location (-0.5 points, within noise), README wording. Business names stay per the brief; the repo is pushed private and the decision is flagged for the team (G4.3, G4.4). |
+| 4 | MINOR | Two README claims without code ("every seed", "0.3-point device noise"). | Removed from the README. |
+| 5 | MINOR | One arbitrary cutoff; no calibration evidence. | `capacity_sensitivity.csv` and `calibration.csv` (G4.2). |
+| 6 | MINOR | "Routine" is inferred; visit timing carries ISD's targeting. | Stated in the README and G4.6. |
+| 7 | MINOR | The priority list ignores who is due; its date came from the pull timestamp. | `days_since_last_visit` column; as-of date is the snapshot end (G4.4). |
+| 8 | MINOR | Thin text design. | Limitation (G4.6). |
+| 9 | MINOR | "The brief names it" as justification for M1. | Notebook 03 gives the reasons (planned main model, native handling of missing history, per-restaurant factors). |
+| 10 | MINOR | Notebook 02 stated the random-order status quo as fact. | Reworded as an assumption. |
+| 11 | MINOR | Process jargon in `DECISIONS.md`; checklist pointed to "Gate 1 to 4". | The checklist now points to this log. The decisions log keeps its record of the process. |
+| 12 | MINOR | scipy not pinned; "about 3,540" against 3,544. | Both fixed. |
+| 13 | MINOR | No GitHub remote; commits carry a personal email. | The branch is pushed to a private repository at the end. The commit email is flagged to the author. |

@@ -12,3 +12,10 @@ Fewer visits needed per year to find as many failed inspections as the rule (B1)
 "Hit rate of the visits ISD actually made first (first 20% of each quarter, by date)",0.6153490458011346,,,a rough picture of today's order; seasonality within a quarter can also move it
 Extra failed inspections found per year in the first 20% of visits vs. ISD's actual order,324.2575393663722,,,"(M1_lgbm ranked within each quarter, hit rate 0.885, minus the line above) x visits"
 "Weeks earlier a visit that ends in a failure happens, on average",1.1142885344839741,,,"risk order within each of 12 calendar quarters, actual visit slots kept; 10,131 failed inspections. Visits that end in a pass move 1.6 weeks later. The number grows with the window: 0.4 weeks within months, 4.4 within years"
+Failed-inspection-weeks gained per year,3949.4780377668308,,,failed inspections per year x weeks earlier (the line above); the same assumptions apply
+"Share of all serious (level 3) violations found in the first 20% of visits, random order",0.1999883524547202,,,"level 3 violations found by the first 20% of test visits / all 5,827 found in the test period"
+"Share of the first 20% of visits that find at least one serious violation, random order",0.23982295731174655,,,test inspections in the first 20% with one or more level 3 violations
+"Share of all serious (level 3) violations found in the first 20% of visits, past-failure-rate rule (B1)",0.3318087723895454,,,"level 3 violations found by the first 20% of test visits / all 5,827 found in the test period"
+"Share of the first 20% of visits that find at least one serious violation, past-failure-rate rule (B1)",0.370819797360506,,,test inspections in the first 20% with one or more level 3 violations
+"Share of all serious (level 3) violations found in the first 20% of visits, M1_lgbm",0.3996910931868886,,,"level 3 violations found by the first 20% of test visits / all 5,827 found in the test period"
+"Share of the first 20% of visits that find at least one serious violation, M1_lgbm",0.44175888177053,,,test inspections in the first 20% with one or more level 3 violations

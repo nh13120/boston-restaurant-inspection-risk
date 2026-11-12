@@ -141,6 +141,79 @@ def impact_table(y, dates, scores, best, k=K, diff_ci=None):
     return out[["quantity", "value", "ci_lo", "ci_hi", "how_computed"]]
 
 
+def severity_in_first_visits(n_serious, score, k=K):
+    """How much of the serious (level 3) violations the first k share of visits finds.
+
+    `n_serious` is the number of level 3 violations each inspection FOUND. It is an outcome,
+    used here only to measure results, never as a feature. Returns (share of all serious
+    violations found in the first k, share of those visits that find at least one).
+    """
+    n_serious = np.asarray(n_serious, dtype=float)
+    n_top = int(round(k * len(n_serious)))
+    counts = _expected_ranked(n_serious, score)[:n_top]
+    any_serious = _expected_ranked((n_serious > 0).astype(float), score)[:n_top]
+    return counts.sum() / n_serious.sum(), any_serious.mean()
+
+
+def plot_share_bar(shares, best, title, ylabel, footnote, path=None):
+    """Three bars (random order, the rule, the model) for a share between 0 and 1."""
+    import textwrap
+
+    import matplotlib.pyplot as plt
+    from src.evaluate import FIGURE_LABELS, MODEL_COLORS, set_plot_style
+
+    set_plot_style()
+    names = ["B0_random", "B1_past_fail_rate", best]
+    fig, ax = plt.subplots(figsize=(9, 5.8))
+    bars = ax.bar([FIGURE_LABELS[n] for n in names], [shares[n] * 100 for n in names],
+                  color=[MODEL_COLORS[n] for n in names])
+    for bar, n in zip(bars, names):
+        ax.text(bar.get_x() + bar.get_width() / 2, shares[n] * 100 + 1, f"{shares[n]:.0%}", ha="center",
+                fontsize=15, fontweight="bold")
+    ax.set_ylabel(ylabel)
+    ax.set_ylim(0, max(shares[n] for n in names) * 100 * 1.25)
+    ax.set_title(title)
+    ax.text(0.0, -0.3, textwrap.fill(footnote, 98), transform=ax.transAxes, fontsize=11, va="top")
+    fig.tight_layout()
+    if path:
+        fig.savefig(path, bbox_inches="tight")
+    return fig
+
+
+def capacity_table(y, scores, capacities=(0.05, 0.10, 0.20, 0.30, 0.50)):
+    """Hit rate of each method at several capacities, with random order and the best possible."""
+    y = np.asarray(y)
+    rows = []
+    for k in capacities:
+        row = {"capacity": k, "random_order": y.mean(), "best_possible": min(1.0, y.mean() / k)}
+        row.update({name: evaluate(y, s, k)["precision_at_k"] for name, s in scores.items() if name != "B0_random"})
+        rows.append(row)
+    return pd.DataFrame(rows)
+
+
+def calibration_table(y, score, bins=10):
+    """Does a predicted risk of 80% fail about 80% of the time? Ten equal groups by predicted risk."""
+    df = pd.DataFrame({"y": np.asarray(y), "score": np.asarray(score, dtype=float)})
+    df["group"] = pd.qcut(df["score"].rank(method="first"), bins, labels=False) + 1
+    return df.groupby("group").agg(n=("y", "size"), mean_predicted_risk=("score", "mean"),
+                                   observed_fail_rate=("y", "mean")).reset_index()
+
+
+def neighborhood_table(neighborhood, y, score, k=K, min_rows=200):
+    """For each neighborhood: its fail rate, and the share of its inspections that land in the
+    first k share of visits. A share far above the neighborhood's fail rate ranking means the
+    model sends inspectors there more than its outcomes alone would."""
+    df = pd.DataFrame({"neighborhood": np.asarray(neighborhood).astype(str), "y": np.asarray(y),
+                       "score": np.asarray(score, dtype=float)})
+    n_top = int(round(k * len(df)))
+    df["in_first"] = False
+    df.loc[df["score"].nlargest(n_top).index, "in_first"] = True
+    out = df.groupby("neighborhood").agg(inspections=("y", "size"), fail_rate=("y", "mean"),
+                                         share_in_first_visits=("in_first", "mean")).reset_index()
+    out["hit_rate_in_first_visits"] = df[df["in_first"]].groupby("neighborhood")["y"].mean().reindex(out["neighborhood"]).to_numpy()
+    return out[out["inspections"] >= min_rows].sort_values("share_in_first_visits", ascending=False).reset_index(drop=True)
+
+
 # --- Priority list -------------------------------------------------------------
 def next_inspection_rows(full, as_of, add_history_features, reinspection_days=30, active_within_days=730):
     """One row per active restaurant describing its NEXT inspection as of `as_of`.

@@ -3,6 +3,7 @@ numpy==2.5.4
 pyarrow==26.0.1
 requests==2.34.2
 scikit-learn==1.9.1
+scipy==1.18.1
 lightgbm==4.7.0
 matplotlib==3.11.2
 transformers==5.22.2

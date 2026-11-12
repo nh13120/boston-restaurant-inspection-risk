@@ -1,0 +1,2 @@
+model,precision_at_k,M1_precision_at_k,difference,ci_lo,ci_hi,verdict,n_val
+M1 without zip and neighborhood,0.9003623188405797,0.904891304347826,-0.004528985507246341,-0.0162605301459886,0.009830425357422018,within noise,5521

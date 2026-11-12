@@ -1,0 +1,56 @@
+{
+  "model": "M3_lgbm_finetuned",
+  "status": "added after the first test evaluation; chosen on validation (2023) only; the project's final model stays M1",
+  "text_source": "last_routine",
+  "text_source_rule": "the source whose text-only fine-tuned model has the higher validation hit rate",
+  "features": "history + text_score (fine-tuned encoder) + has_text",
+  "lgbm": {
+    "num_leaves": 7,
+    "learning_rate": 0.05,
+    "n_estimators": 100
+  },
+  "text_only_lgbm": {
+    "num_leaves": 15,
+    "learning_rate": 0.05,
+    "n_estimators": 57
+  },
+  "fine_tuning": {
+    "encoder": "sentence-transformers/all-MiniLM-L6-v2",
+    "encoder_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    "max_tokens": 128,
+    "epochs": 2,
+    "learning_rate": 5e-05,
+    "batch_size": 32,
+    "target": "label_fail of the routine inspection"
+  },
+  "time_blocks": {
+    "validation": [
+      [
+        "2016-01-01",
+        "2016-01-01",
+        "2019-01-01"
+      ],
+      [
+        "2019-01-01",
+        "2019-01-01",
+        "2022-01-01"
+      ],
+      [
+        "2022-01-01",
+        "2022-01-01",
+        "2023-01-01"
+      ],
+      [
+        "2023-01-01",
+        "2023-01-01",
+        "2024-01-01"
+      ]
+    ],
+    "test": [
+      "2024-01-01",
+      "2024-01-01",
+      "2100-01-01"
+    ]
+  },
+  "test_protocol": "refit LightGBM on 2016 to 2023 with these settings; test rows get their text score from a model fine-tuned on everything before 2024; scored once; report M3 and the text-only model next to the five planned models, with paired differences M3 minus M1, M2 and B2"
+}

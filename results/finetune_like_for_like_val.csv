@@ -1,0 +1,7 @@
+text source,model,precision_at_k,comments longer than 128 tokens
+previous_visit,fine-tuned encoder (first 128 tokens),0.8522887946270766,0.26771341538918747
+previous_visit,"bag of words, whole comment",0.8405797101449275,
+previous_visit,"bag of words, first 128 tokens",0.832427536231884,
+last_routine,fine-tuned encoder (first 128 tokens),0.869241718426501,0.3224961060152792
+last_routine,"bag of words, whole comment",0.8713768115942029,
+last_routine,"bag of words, first 128 tokens",0.8605072463768116,

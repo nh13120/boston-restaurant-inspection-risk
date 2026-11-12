@@ -17,7 +17,7 @@ for nb in 01_data 02_baselines 03_models 04_results; do
 done
 ```
 
-About 6 minutes on an M-series laptop, plus a first data pull (10 minutes) and a 90 MB encoder download. For our exact numbers (verified on Apple Silicon), get `inspections_snapshot.parquet` from the repo owner and place it in `data/raw/`.
+About 6 minutes on an M-series laptop, plus a first data pull (10 minutes) and a 90 MB encoder download. For our exact numbers (verified on Apple Silicon), install from `requirements-lock.txt`, get `inspections_snapshot.parquet` from the repo owner and place it in `data/raw/`.
 
 ## Results on the test years (2024 to Nov 2026, 17,171 inspections)
 

@@ -216,7 +216,7 @@ Same prompt, fresh subagent. Verdict: 0 BLOCKER, 0 MAJOR, 11 MINOR. Gate 3 passe
 
 ### Round 3 (last)
 
-**Reproducibility tester.** Verdict: 0 BLOCKER, 0 MAJOR, 5 MINOR; `results/results.csv` identical: yes. 41 of 41 files in `results/` and `preds/` byte-identical in two runs (6 min 17 s and 6 min 24 s), the second with a fresh encoder download and no cached intermediate files. Minors: the snapshot instruction (kept short: get the parquet from the repo owner), figures not listed (the README now says 8 figures), the lock file not mentioned for an exact install (it is, in the setup block of earlier versions and in `docs/`), exact match verified on Apple Silicon only (now stated), and the committed notebook 03 run with cached embeddings (left).
+**Reproducibility tester.** Verdict: 0 BLOCKER, 0 MAJOR, 5 MINOR; `results/results.csv` identical: yes. 41 of 41 files in `results/` and `preds/` byte-identical in two runs (6 min 17 s and 6 min 24 s), the second with a fresh encoder download and no cached intermediate files. Minors: the snapshot instruction (kept short: get the parquet from the repo owner), figures not listed (the README now says 8 figures), the lock file not mentioned for an exact install (now in the README), exact match verified on Apple Silicon only (now stated), and the committed notebook 03 run with cached embeddings (left).
 
 **Course grader.** Scores: Q1 4/5, Q2 4/5, Q3 4/5, Q4 3/5. Verdict: 0 BLOCKER, 4 MAJOR, 12 MINOR. The loop ends after three rounds, so these fixes were made without another review.
 

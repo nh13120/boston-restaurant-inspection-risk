@@ -5,7 +5,7 @@ Test years (2024 to Nov 2026, 17,171 routine inspections, 59% fail). Share of th
 - random order 59%, past-failure-rate rule 80%
 - logistic regression 87%, LightGBM (final) 88%, LightGBM + comment text 89%
 
-Same yearly total of failures, found earlier: about 350 more in the first 20% of visits than random order, 42 to 94 more than a hand rule, 40% of serious violations (20% random).
+Same yearly total, found earlier: about 350 more failures in the first 20% of visits than random order, 42 to 94 more than a hand rule.
 
 Caveats: "random order = today" is assumed. Model adds 1 point over logistic regression, text 0.7. Zip code is an input.
 

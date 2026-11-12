@@ -1,4 +1,4 @@
-# Status: pipeline done, pushed (private), all four review gates run
+# Status: pipeline done, pushed (public repo), all four review gates run
 
 Test years (2024 to Nov 2026, 17,171 routine inspections, 59% fail). Share of the first 20% of visits that find a failure:
 

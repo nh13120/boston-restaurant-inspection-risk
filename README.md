@@ -1,5 +1,7 @@
 # Which Boston restaurants should be inspected first?
 
+New to GitHub? [START_HERE.md](START_HERE.md) shows the key charts and where everything is.
+
 Boston's Inspectional Services Department (ISD) makes about 6,000 routine restaurant inspections a year, and 59% end in a failure. This repo ranks upcoming inspections by risk of failing, so planners can schedule the riskiest restaurants first each quarter and find serious violations sooner. We could not confirm how ISD orders visits today: "random order" is our assumption.
 
 ## Data

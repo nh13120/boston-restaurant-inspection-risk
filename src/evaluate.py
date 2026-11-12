@@ -28,10 +28,14 @@ FIGURE_LABELS = {
     "B2_logreg": "Simple statistical\nmodel",
     "M1_lgbm": "Machine-learning\nmodel",
     "M2_lgbm_text": "Machine learning +\ninspector comments",
+    # Notebook 05 (fine-tuned text encoder), used only in the text figure
+    "T_finetuned_text_only": "Inspector\ncomments only",
+    "M3_lgbm_finetuned": "Machine learning +\ncomments, fine-tuned",
 }
 MODEL_COLORS = {
     "B0_random": "#9a9a9a", "B1_past_fail_rate": "#dd8452", "B2_logreg": "#8172b3",
     "M1_lgbm": "#4c72b0", "M2_lgbm_text": "#2a9d8f",
+    "T_finetuned_text_only": "#8fd1c8", "M3_lgbm_finetuned": "#1d6b62",
 }
 
 

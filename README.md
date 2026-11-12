@@ -52,4 +52,4 @@ We recommend ranking by inspection history, where a hand rule already brings mos
 
 ## Repo map
 
-`notebooks/` 01 data, 02 baselines, 03 models, 04 results. `src/` logic. `preds/` scores. `results/` tables, 8 figures, priority list. `docs/` decisions, data dictionary, frozen config.
+`notebooks/` 01 data, 02 baselines, 03 models, 04 results. `src/` logic. `preds/` scores. `results/` tables, 10 figures, priority list. `docs/` decisions, data dictionary, frozen config.

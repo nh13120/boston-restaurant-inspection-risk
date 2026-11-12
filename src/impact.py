@@ -361,12 +361,15 @@ def plot_impact_bar(impact, best, title, path=None, k=K):
     bars = ax.bar([r[0] for r in rows], [r[1] for r in rows], color=[r[2] for r in rows])
     for bar, (_, v, _) in zip(bars, rows):
         ax.text(bar.get_x() + bar.get_width() / 2, v + 12, f"{v:,.0f}", ha="center", fontsize=15, fontweight="bold")
+    # Same numbers and 95% ranges as results/impact.csv and the README.
+    ci = impact.set_index("quantity")[["ci_lo", "ci_hi"]]
+    extra = f"Extra failed inspections found per year in the first {k:.0%} of visits vs. "
+    r_lo, r_hi = ci.loc[extra + "random order"]
+    b_lo, b_hi = ci.loc[extra + "the rule (B1)"]
     extra_random = rows[2][1] - rows[0][1]
-    extra_actual = value[[q for q in value.index if q.endswith("vs. ISD's actual order")][0]]
     extra_rule = rows[2][1] - rows[1][1]
-    lo, hi = sorted([round(extra_actual, -1), round(extra_random, -1)])
-    ax.text(0.02, 0.97, f"About {lo:,.0f} to {hi:,.0f} more than the assumed current order,\n"
-                        f"and {extra_rule:,.0f} more than the simple rule",
+    ax.text(0.02, 0.97, f"{extra_random:,.0f} more than random order (95% range {r_lo:,.0f} to {r_hi:,.0f}),\n"
+                        f"{extra_rule:,.0f} more than the simple rule ({b_lo:,.0f} to {b_hi:,.0f})",
             transform=ax.transAxes, va="top", fontsize=13, color=MODEL_COLORS[best], fontweight="bold")
     ax.set_ylabel(f"Failed inspections found per year\nin the first {k:.0%} of visits")
     ax.set_ylim(0, max(r[1] for r in rows) * 1.32)
@@ -374,6 +377,34 @@ def plot_impact_bar(impact, best, title, path=None, k=K):
     ax.text(0.0, -0.3, f"Each bar: the first {visits:,.0f} of about {visits / k:,.0f} routine inspections a year. Over the whole year the total\n"
                         f"(about {total:,.0f} failed inspections) is the same in any order. The gain is finding them earlier.",
             transform=ax.transAxes, fontsize=11)
+    fig.tight_layout()
+    if path:
+        fig.savefig(path, bbox_inches="tight")
+    return fig
+
+
+def plot_neighborhoods(neighborhoods, best, title, path=None, k=K):
+    """Share of each neighborhood's inspections that land in the first k share of visits, under the
+    model (bars) and under a hand rule that ignores location (black ticks). `neighborhoods` =
+    neighborhood_table output with the column share_in_first_visits_rule_without_location."""
+    import matplotlib.pyplot as plt
+    from src.evaluate import MODEL_COLORS, set_plot_style
+
+    set_plot_style()
+    nb = neighborhoods.sort_values("share_in_first_visits")
+    labels = [f"{n} (fails {f:.0%})" for n, f in zip(nb["neighborhood"], nb["fail_rate"])]
+    fig, ax = plt.subplots(figsize=(9.5, 0.42 * len(nb) + 2.4))
+    ax.barh(labels, nb["share_in_first_visits"] * 100, color=MODEL_COLORS[best], label="Machine-learning model")
+    ax.scatter(nb["share_in_first_visits_rule_without_location"] * 100, labels, marker="|", s=260, linewidths=2.5,
+               color="black", zorder=3, label="Hand rule without location")
+    ax.axvline(k * 100, color="#9a9a9a", linestyle="--", linewidth=1.2)
+    ax.text(k * 100 + 0.5, len(nb) - 0.4, f"{k:.0%} = even share", fontsize=11, color="#555555")
+    ax.set_xlabel(f"Share of the neighborhood's inspections in the first {k:.0%} of visits (%)")
+    ax.set_title(title)
+    ax.legend(loc="lower right", frameon=False)
+    ax.text(0.0, -0.16, "Test period, 2024 to 2026, neighborhoods with at least 200 inspections. Zip code and neighborhood\n"
+                        "are model inputs; the hand rule (most violations at the last routine inspection) does not use them.",
+            transform=ax.transAxes, fontsize=11, va="top")
     fig.tight_layout()
     if path:
         fig.savefig(path, bbox_inches="tight")

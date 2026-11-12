@@ -199,19 +199,52 @@ def calibration_table(y, score, bins=10):
                                    observed_fail_rate=("y", "mean")).reset_index()
 
 
-def neighborhood_table(neighborhood, y, score, k=K, min_rows=200):
+def first_visit_probability(score, k=K):
+    """Chance that each inspection is among the first k share of visits when ranked by `score`.
+    1 above the cutoff, 0 below, and a fair share of the remaining slots for scores tied at it."""
+    score = np.asarray(score, dtype=float)
+    n_top = int(round(k * len(score)))
+    cutoff = np.sort(score)[::-1][n_top - 1]
+    above, tied = score > cutoff, score == cutoff
+    return np.where(above, 1.0, np.where(tied, (n_top - above.sum()) / tied.sum(), 0.0))
+
+
+def neighborhood_table(neighborhood, y, score, other=None, k=K, min_rows=200):
     """For each neighborhood: its fail rate, and the share of its inspections that land in the
-    first k share of visits. A share far above the neighborhood's fail rate ranking means the
-    model sends inspectors there more than its outcomes alone would."""
+    first k share of visits. `other` = {column label: another score} adds the same share under
+    another ranking, for comparison (for example a rule that does not use location)."""
     df = pd.DataFrame({"neighborhood": np.asarray(neighborhood).astype(str), "y": np.asarray(y),
-                       "score": np.asarray(score, dtype=float)})
-    n_top = int(round(k * len(df)))
-    df["in_first"] = False
-    df.loc[df["score"].nlargest(n_top).index, "in_first"] = True
-    out = df.groupby("neighborhood").agg(inspections=("y", "size"), fail_rate=("y", "mean"),
-                                         share_in_first_visits=("in_first", "mean")).reset_index()
-    out["hit_rate_in_first_visits"] = df[df["in_first"]].groupby("neighborhood")["y"].mean().reindex(out["neighborhood"]).to_numpy()
+                       "in_first": first_visit_probability(score, k)})
+    agg = {"inspections": ("y", "size"), "fail_rate": ("y", "mean"), "share_in_first_visits": ("in_first", "mean")}
+    for label, other_score in (other or {}).items():
+        df[label] = first_visit_probability(other_score, k)
+        agg[label] = (label, "mean")
+    out = df.groupby("neighborhood").agg(**agg).reset_index()
+    hits = (df["y"] * df["in_first"]).groupby(df["neighborhood"]).sum() / df.groupby("neighborhood")["in_first"].sum()
+    out["hit_rate_in_first_visits"] = hits.reindex(out["neighborhood"]).to_numpy()
     return out[out["inspections"] >= min_rows].sort_values("share_in_first_visits", ascending=False).reset_index(drop=True)
+
+
+def after_a_pass(scored, table, k=K):
+    """What happens after a restaurant PASSES: does a high risk score still mean something?
+
+    `scored` = test inspections with columns licenseno, date, label_fail, score.
+    `table`  = all routine inspections (the model table). For each test inspection that passed,
+    we look up the same restaurant's next routine inspection and report how often it failed,
+    separately for passes the model ranked in its riskiest k share and for the other passes.
+    """
+    nxt = table.sort_values(["licenseno", "date"])[["licenseno", "date", "label_fail"]].copy()
+    nxt["next_date"] = nxt.groupby("licenseno")["date"].shift(-1)
+    nxt["next_fail"] = nxt.groupby("licenseno")["label_fail"].shift(-1)
+    df = scored.merge(nxt[["licenseno", "date", "next_date", "next_fail"]], on=["licenseno", "date"], how="left")
+    df["high_risk"] = first_visit_probability(df["score"], k) > 0.5
+    passed = df[(df["label_fail"] == 0) & df["next_fail"].notna()].copy()
+    passed["days_to_next"] = (passed["next_date"] - passed["date"]).dt.days
+    out = passed.groupby("high_risk").agg(passes_with_a_later_inspection=("next_fail", "size"),
+                                          next_inspection_fail_rate=("next_fail", "mean"),
+                                          median_days_to_next_inspection=("days_to_next", "median")).reset_index()
+    out["group"] = np.where(out["high_risk"], f"passed, but ranked in the riskiest {k:.0%}", "passed, ranked lower")
+    return out[["group", "passes_with_a_later_inspection", "next_inspection_fail_rate", "median_days_to_next_inspection"]]
 
 
 # --- Priority list -------------------------------------------------------------

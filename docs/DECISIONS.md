@@ -60,7 +60,7 @@ The reviewer found no leakage. These decisions answer its findings. Details are 
 
 **G1.4 A frozen, checkable snapshot.** The pull now has an upper bound (`resultdttm < '2026-11-11'`), and its metadata records the source, the license and a fingerprint of the content. `docs/pull_metadata.json` is the committed reference. A fresh pull is compared with it and prints a warning if the city has edited rows since. Alternative: commit the data, which the brief forbids.
 
-**G1.5 `licstatus` leaves the model table.** It describes the license today, so it would be future information as a feature. It stays in `inspections_full.parquet` for the priority list. `models.py` also refuses any outcome-side column as a feature. The other static fields (`zip`, `neighborhood`, type) are also as of the pull date. We accept that, because a restaurant's location and type rarely change, and the README says so.
+**G1.5 `licstatus` leaves the model table.** It describes the license today, so it would be future information as a feature. It stays in `inspections_full.parquet` for the priority list. `models.py` also refuses any outcome-side column as a feature. The other static fields (`zip`, `neighborhood`, type) are also as of the pull date. We accept that, because a restaurant's location and type rarely change, and the data dictionary says so.
 
 **G1.6 Smaller fixes.** Dates are converted to Boston time before the calendar date is taken. 224 exact duplicate rows are dropped. The leakage check now compares all 13 history columns with a by-hand recomputation for 300 random restaurants. `requirements.txt` is pinned. The lecture paths in D0.2 no longer show the local user name.
 
@@ -78,7 +78,7 @@ The reviewer found no leakage. These decisions answer its findings. Details are 
 
 **D5.2 PCA.** 32 components, fitted on training rows that have comments (59.8% of variance kept). Rows without comments get a zero vector and `has_prior_comments = 0`, as the brief asks.
 
-**D5.3 Text adds no measurable value.** On validation, M2 minus M1 is +0.1 points of hit rate (95% CI -1.3 to +0.9). Before the routine-only features were added (G1.2), text gave +1.7 points. The comments mostly describe the violations of the last routine inspection, and `last_routine_n_viol` now carries that signal directly. M2's selected settings change with tiny numeric differences, because its 12 grid combinations sit within one point of each other.
+**D5.3 Text adds no measurable value.** On validation, M2 minus M1 is +0.1 points of hit rate (95% CI -1.2 to +1.0). Before the routine-only features were added (G1.2), text gave +1.7 points. The comments mostly describe the violations of the last routine inspection, and `last_routine_n_viol` now carries that signal directly. M2's selected settings change with tiny numeric differences, because its 12 grid combinations sit within one point of each other.
 
 ## Improvement loop (one round, validation only)
 
@@ -86,7 +86,7 @@ An experimenter subagent analyzed the validation errors and proposed changes. Th
 
 What the error analysis found: M1 and M2 make the same mistakes (1,025 of 1,104 top rows in common). Almost every top-ranked row had a failed last routine inspection. The blind spot is restaurants whose last routine inspection was clean (0 to 2 violations): 41% of them still fail, and they hold more than half of the failures the model misses.
 
-**IL.1 Routine-violation memory: tested, not kept.** Two features, `r3_mean_viol` (mean violations over the last three routine inspections) and `prev2_routine_n_viol` (violations at the routine inspection before the last one). Validation hit rate went from 90.49% to 91.30%, a gain of 0.82 points (95% CI -0.45 to +1.90), below the 1.95-point threshold. The experimenter's backtests on 2019 to 2022 also showed gains of 0.5 to 1.2 points each year, so the idea is probably real but small. The code stays in `features.candidate_memory_features` and notebook 03 reruns the test. It is the first thing to try with more data.
+**IL.1 Routine-violation memory: tested, not kept.** Two features, `r3_mean_viol` (mean violations over the last three routine inspections) and `prev2_routine_n_viol` (violations at the routine inspection before the last one). Validation hit rate went from 90.49% to 91.30%, a gain of 0.82 points (95% CI -0.28 to +1.90), below the 2.00-point threshold. The experimenter's backtests on 2019 to 2022 also showed gains of 0.5 to 1.2 points each year, so the idea is probably real but small. The code stays in `features.candidate_memory_features` and notebook 03 reruns the test. It is the first thing to try with more data.
 
 **IL.2 Comment truncation: tested by the experimenter, not proposed.** M2's validation hit rate at 32, 64, 128, 256 and 512 tokens was 89.8%, 90.1%, 89.7%, 90.2% and 90.4%. Every difference from 256 is within noise, and none beats M1. We keep 256.
 
@@ -110,7 +110,7 @@ No third proposal was made, and there is no second round, because more rounds wo
 
 **G2.8 A second simple rule, for honesty.** Ranking by the number of violations at the last routine inspection scores 84.4% on validation, 4 points above B1. B1 stays the business-rule benchmark because the brief defines it. Notebooks 02 and 04 show the second rule as a sensitivity row, and the README says that the gain "over the rule" depends on the rule.
 
-**G2.4 M2 depends on the device.** Embeddings computed on `mps` and on CPU differ in the sixth decimal. That is enough to change which of M2's near-tied grid settings wins and to move its hit rate by about 0.3 points. The conclusion (text adds nothing measurable) holds on both. We keep `mps` as the brief asks, pin the encoder revision, and state the caveat in the README. M1, the final model, does not use embeddings and reruns bit for bit.
+**G2.4 M2 depends on the device.** Embeddings computed on `mps` and on CPU differ in the sixth decimal. That is enough to change which of M2's near-tied grid settings wins and to move its hit rate by about 0.3 points. The conclusion (text adds nothing measurable) holds on both. We keep `mps` as the brief asks, pin the encoder revision, and state the caveat in the frozen config and in notebook 03. M1, the final model, does not use embeddings and reruns bit for bit.
 
 **G2.5 Text examples.** The brief asks for failed inspections that M2 ranked in its top 10% and M1 "much lower". There are none: the largest move is about 10 percentile points and the median is near zero. `results/text_examples.md` now says so and shows the three largest moves.
 
@@ -171,3 +171,12 @@ No third proposal was made, and there is no second round, because more rounds wo
 **G4.5 README and setup.** The README is cut to one page: the macOS OpenMP steps moved to `docs/setup_macos.md`, three README claims without code behind them were removed or replaced by reproducible numbers, and `requirements-lock.txt` pins every installed package (`requirements.txt` keeps the 13 direct ones, now with scipy). Hugging Face progress bars are silenced so executed notebooks stay small.
 
 **G4.6 Left as limitations.** The text model reads the previous visit's comments, which for about half the rows is a re-inspection record, and it has no "last routine inspection" variant or simple bag-of-words comparison. "Routine" is inferred from timing, so complaint-driven visits are included, and visit timing itself carries ISD's own targeting. These would need new features or models, which the grading round excluded.
+
+**G4.7 Round 2 of the grading.** A second grader caught an error of ours: the README attached the yearly gains against random order (346, 407, 288) to the sentence about ISD's actual order. `results_by_year.csv` now has both, and the README quotes both (against the actual order: 334, 393, 234). Other changes:
+
+- The README says in its first paragraph that we could not confirm how ISD orders visits today. That is the main gap of the project, and no analysis of this dataset can close it.
+- It ends the results with a recommendation: rank by history, use the model without zip code, and return sooner to restaurants that pass but rank high. The last point rests on a new table, `results/after_a_pass.csv`: among test inspections that passed, the 299 that M1 ranked in its riskiest 20% failed their next routine inspection 59.5% of the time, against 42.8% for the other 5,076, and ISD returned to them only slightly sooner (median 158 against 176 days).
+- It states the combination of tabular and deep learning as one of the five modeling choices, and owns the result: text adds at most a point or two, because comments mostly restate the violation count.
+- `results/neighborhood_table.csv` gains a comparison column under a hand rule that ignores location. With it, Dorchester and Roxbury both get about 24% of their inspections in the first 20% of visits, against 46% and 19% under M1.
+- The gains chart shows the best possible curve: a perfect ranking would find 34% of failures in the first 20% of visits, and M1 finds 30%.
+- Left open: intervals for the timing and severity numbers, and a figure for the neighborhood table.

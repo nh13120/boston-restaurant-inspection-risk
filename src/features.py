@@ -375,6 +375,16 @@ def candidate_memory_features(full):
                          "prev2_routine_n_viol": as_of_last_routine(previous)})
 
 
+def candidate_last_routine_comments(full):
+    """Text experiment (see docs/DECISIONS.md, PF.1): the comments of the last ROUTINE inspection,
+    instead of the previous visit's. Same no-leak pattern as the last_routine_* features.
+    Returns a table keyed by inspection_id."""
+    df = full.sort_values(["licenseno", "date"]).reset_index(drop=True)
+    lic = df["licenseno"]
+    text = df["comments"].where(df["is_reinspection"] == 0).groupby(lic).shift(1).groupby(lic).ffill()
+    return pd.DataFrame({"inspection_id": df["inspection_id"], "last_routine_comments": text.fillna("")})
+
+
 # --- Step 4: split and filter -------------------------------------------------
 def add_split(df):
     """Fixed time split: train 2016-2022, validation 2023, test 2024 onward. Earlier rows are history."""

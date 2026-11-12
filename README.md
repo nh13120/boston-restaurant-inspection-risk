@@ -17,7 +17,7 @@ for nb in 01_data 02_baselines 03_models 04_results; do
 done
 ```
 
-About 6 minutes on an M-series laptop, plus a first data pull (10 minutes) and a 90 MB encoder download. For our exact numbers (verified on Apple Silicon), install from `requirements-lock.txt`, get `inspections_snapshot.parquet` from the repo owner and place it in `data/raw/`.
+About 7 minutes on an M-series laptop, plus a first data pull (10 minutes) and a 90 MB encoder download. For our exact numbers (verified on Apple Silicon), install from `requirements-lock.txt`, get `inspections_snapshot.parquet` from the repo owner and place it in `data/raw/`.
 
 ## Results on the test years (2024 to Nov 2026, 17,171 inspections)
 
@@ -46,7 +46,7 @@ We recommend ranking by inspection history, where a hand rule already brings mos
 ## Limitations
 
 - The status quo is assumed, and 20% is an illustrative capacity. M1's lead over the rule is 7.8 points overall and 3.3 to 3.7 on two robustness slices. Hit rates fell from 90.1% in 2024 to 84.9% in 2026.
-- The algorithm and the text add little: M1 leads logistic regression by 1.1 points (CI 0.3 to 1.9), and the text model leads M1 by 0.7 (CI 0.1 to 1.4).
+- The algorithm and the text add little: M1 leads logistic regression by 1.1 points (CI 0.3 to 1.9), and the text model leads M1 by 0.7 (CI 0.1 to 1.4). Comments alone reach 84% to 87% on validation (`results/text_ablation_val.csv`): they carry signal, but repeat what the history says.
 - Scores are estimates, not findings about a business. The priority list names businesses, so read `results/priority_list_note.md` first. Name masking in comments is best effort.
 
 ## Repo map

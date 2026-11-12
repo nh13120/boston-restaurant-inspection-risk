@@ -103,3 +103,16 @@ def add_text_features(df, embeddings, pca):
     out[PC_COLUMNS] = pca.transform(embeddings)
     out["has_prior_comments"] = (df["prior_comments"].fillna("").str.strip() != "").astype(int).to_numpy()
     return out
+
+
+def bag_of_words_features(texts, fit_mask, n_components=N_COMPONENTS):
+    """A comparator with no deep learning: word and word-pair counts (TF-IDF), compressed to the
+    same number of columns as the embeddings. Vocabulary and compression are fitted on the
+    `fit_mask` rows only (training rows that have text)."""
+    from sklearn.decomposition import TruncatedSVD
+    from sklearn.feature_extraction.text import TfidfVectorizer
+
+    texts = pd.Series(list(texts), dtype="object").fillna("")
+    tfidf = TfidfVectorizer(ngram_range=(1, 2), min_df=20, sublinear_tf=True, stop_words="english").fit(texts[fit_mask])
+    svd = TruncatedSVD(n_components=n_components, random_state=SEED).fit(tfidf.transform(texts[fit_mask]))
+    return svd.transform(tfidf.transform(texts))

@@ -196,3 +196,13 @@ Left as is, for the team to decide:
 - The model without location was not scored on the test years, because the settings were frozen before the test. Scoring it now and labelling it as after the fact is an option.
 - Timing, severity and after-a-pass numbers have no intervals (the after-a-pass group is 299 inspections).
 - `REVIEW_LOG.md` and `STATUS.md` are process notes. They can leave the repo before it goes public.
+
+## After the freeze: text experiments (validation only)
+
+**PF.1 Is the text empty, or redundant?** Tried after the final review, at the author's request, to give the text a fairer chance. Everything here uses 2016 to 2022 for fitting and 2023 for scoring. The frozen settings, the test predictions and the final model are unchanged. Results are in `results/text_ablation_val.csv` and notebook 03, section 7.
+
+- A different text source, the comments of the last routine inspection, in place of the previous visit's. It is identical to the previous visit's text for 88.5% of rows, because re-inspection records copy the original comments. Added to the history features it gives 90.7% against M1's 90.5% (+0.2 points, within noise). Not adopted.
+- Text alone, with no history feature: 83.9% with embeddings of the previous visit, 85.5% with embeddings of the last routine inspection, 87.1% with a bag of words. For comparison, the past-failure-rate rule scores 80.4% and logistic regression on history 88.9%. So the comments carry real signal. They add nothing to M1 because they describe the violations that M1 already counts.
+- A bag-of-words comparator (TF-IDF on words and word pairs, compressed to 32 columns) does at least as well as the frozen encoder, alone (87.1% against 85.5%) and with history (90.9% against 90.7%, both within noise of M1). A general-purpose sentence embedding squeezed into 32 numbers loses detail that word counts keep.
+
+What this means for the project: the deep-learning part works as a text reader but is not what makes the ranking good. The honest claim is "comments alone get within a few points of the full history, and add nothing on top of it". Alternative not yet tried: fine-tuning the encoder on these comments (the course's Lecture 12 pattern), which is the natural way to see whether deep learning can beat the bag of words here.

@@ -21,7 +21,7 @@ About 7 minutes on an M-series laptop, plus a first data pull (10 minutes) and a
 
 ## Results on the test years (2024 to Nov 2026, 17,171 inspections)
 
-Each method ranks the inspections, and we look at the first 20%. Settings were frozen on 2023 before the test years were scored.
+Each method ranks the inspections, and we look at the first 20%. Settings were frozen on 2023 before the test years were scored. M3 was added after the five planned models had been scored, with its own freeze (optional notebook 05, about 40 minutes on a GPU, not reproducible to the last digit).
 
 | Method | Visits that find a failure (95% CI) | Share of all failures found | Share of serious violations found |
 |---|---|---|---|
@@ -30,6 +30,7 @@ Each method ranks the inspections, and we look at the first 20%. Settings were f
 | B2 Logistic regression on history | 87.0% (85 to 88) | 29.5% | 39% |
 | M1 LightGBM on history (final model) | 88.1% (86 to 89) | 29.9% | 40% |
 | M2 LightGBM on history + comment embeddings | 88.8% (87 to 90) | 30.1% | 40% |
+| M3 LightGBM on history + fine-tuned text encoder (added later) | 89.1% (88 to 90) | 30.2% | 40% |
 
 ISD makes every routine inspection sooner or later, so the yearly total (about 3,544 failed inspections) is the same in any order. Ranking changes when problems are found. In the first 20% of visits (1,201 a year), M1 finds 349 more failed inspections than a random order (CI 333 to 364) and 42 to 94 more than a hand rule. Within a quarter, a visit that ends in a failure comes 1.1 weeks sooner (0.8 to 0.9 with a hand rule), and one that ends in a pass 1.6 weeks later.
 
@@ -40,13 +41,13 @@ We recommend ranking by inspection history, where a hand rule already brings mos
 - One row per routine inspection, label 1 = any fail code. "Routine" is inferred: visits within 30 days of a failure are re-inspections, dropped after the features are built.
 - History features use only earlier inspections of the same license (records since 2006). Location and type are today's values.
 - Time split: train 2016 to 2022, validation 2023, test 2024 onward. Final fits use 2016 to 2023.
-- Deep learning on text: M2 adds the previous inspection's comments, embedded with a frozen `all-MiniLM-L6-v2` (32 PCA components).
+- Deep learning on text: M2 adds the previous inspection's comments, embedded with a frozen `all-MiniLM-L6-v2` (32 PCA components). M3 fine-tunes that encoder on the last routine inspection's comments.
 - Intervals are bootstraps over whole restaurants. M1 was fixed as the final model on validation, where text added nothing.
 
 ## Limitations
 
 - The status quo is assumed, and 20% is an illustrative capacity. M1's lead over the rule is 7.8 points overall and 3.3 to 3.7 on two robustness slices. Hit rates fell from 90.1% in 2024 to 84.9% in 2026.
-- The algorithm and the text add little: M1 leads logistic regression by 1.1 points (CI 0.3 to 1.9), and the text model leads M1 by 0.7 (CI 0.1 to 1.4). Comments alone reach 84% to 87% on validation (`results/text_ablation_val.csv`): they carry signal, but repeat what the history says.
+- The algorithm adds little and the text about a point: M1 leads logistic regression by 1.1 points (CI 0.3 to 1.9), M2 leads M1 by 0.7 (CI 0.1 to 1.4) and M3 by 1.0 (CI 0.3 to 1.8). Comments alone reach 84% on the test years: they carry signal, but mostly repeat what the history says.
 - Scores are estimates, not findings about a business. The priority list names businesses, so read `results/priority_list_note.md` first. Name masking in comments is best effort.
 
 ## Repo map

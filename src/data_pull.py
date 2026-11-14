@@ -72,8 +72,8 @@ def _compare_with_reference(meta, reference):
         return True
     else:
         print(f"WARNING: snapshot differs from the reference ({meta['row_count']:,} rows here, "
-              f"{ref['row_count']:,} in the reference). The city has edited the table since "
-              f"{ref['pulled_at_utc']}, so results may differ slightly from the committed ones.")
+              f"{ref['row_count']:,} in the reference). The city has probably edited the table "
+              f"since {ref['pulled_at_utc']} (or this file is partial), so results may differ slightly from the committed ones.")
         return False
 
 
@@ -87,7 +87,7 @@ def pull_inspections(raw_dir="../data/raw", force=False, reference="../docs/pull
         # Hash the file's content itself, so an edited or partial snapshot is noticed.
         same = _compare_with_reference({"content_sha256": content_hash(df), "row_count": len(df)}, reference)
         if same and not meta_file.exists():
-            # A snapshot copied in without its metadata (the README's exact-numbers path):
+            # A snapshot copied in without its metadata (the exact-files path in docs/setup.md):
             # it is the reference snapshot, so the reference metadata describes it.
             meta_file.write_text(Path(reference).read_text())
         return df

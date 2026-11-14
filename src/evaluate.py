@@ -11,7 +11,7 @@ import pandas as pd
 from scipy.stats import rankdata
 
 SEED = 42
-K = 0.20   # ISD capacity: visit the riskiest 20% first
+K = 0.20   # the metrics count the riskiest 20% of visits (an illustrative capacity)
 
 # One display name and one colour per model, shared by every figure.
 MODEL_LABELS = {
@@ -25,12 +25,12 @@ MODEL_LABELS = {
 FIGURE_LABELS = {
     "B0_random": "Random order\n(assumed status quo)",
     "B1_past_fail_rate": "Simple rule:\npast failure rate",
-    "B2_logreg": "Logistic regression:\ninspection history",
-    "M1_lgbm": "LightGBM:\ninspection history",
+    "B2_logreg": "Logistic regression:\nhistory only",
+    "M1_lgbm": "LightGBM:\nhistory only",
     "M2_lgbm_text": "LightGBM:\nhistory + comments",
     # Notebook 05 (fine-tuned text encoder), used only in the text figure
     "T_finetuned_text_only": "Language model:\ncomments only",
-    "M3_lgbm_finetuned": "LightGBM: history +\nfine-tuned comments",
+    "M3_lgbm_finetuned": "LightGBM: history +\ncomments (fine-tuned)",
 }
 MODEL_COLORS = {
     "B0_random": "#9a9a9a", "B1_past_fail_rate": "#dd8452", "B2_logreg": "#8172b3",
@@ -203,7 +203,7 @@ def plot_gains(y, scores, title, path=None, k=K, highlight=None):
                 label=FIGURE_LABELS.get(name, name).replace("\n", " "), color=MODEL_COLORS.get(name),
                 linewidth=3 if name == highlight else 1.8,
                 linestyle="--" if name == "B0_random" else "-")
-    ax.axvline(k * 100, color="black", linestyle=":", linewidth=1.2)
+    ax.axvline(k * 100, ymax=0.66, color="black", linestyle=":", linewidth=1.2)   # stops below the legend
     if highlight:
         y_arr = np.asarray(y)
         perfect = gains_curve(y_arr, y_arr.astype(float))       # a ranking that knows the outcomes
@@ -215,8 +215,8 @@ def plot_gains(y, scores, title, path=None, k=K, highlight=None):
                     xy=(k * 100, caught), xytext=(k * 100 + 18, caught - 25), fontsize=13, fontweight="bold",
                     color=MODEL_COLORS.get(highlight), arrowprops=dict(arrowstyle="->", color=MODEL_COLORS.get(highlight)))
     else:
-        ax.text(k * 100 + 1, 3, f"Capacity: {k:.0%} of inspections", fontsize=11)
-    ax.set_xlabel("Share of inspections made, riskiest first (%)")
+        ax.text(k * 100 + 1, 3, f"First {k:.0%} of visits", fontsize=11)
+    ax.set_xlabel("Share of visits made, riskiest first (%)")
     ax.set_ylabel("Share of failed inspections found (%)")
     ax.set_title(title)
     ax.set_xlim(0, 100)
@@ -281,7 +281,7 @@ FEATURE_LABELS = {
     "is_first": "First inspection on record",
     "prior_fail_rate": "Share of past inspections failed",
     "prior_routine_fail_rate": "Share of past routine inspections failed",
-    "last_fail": "Previous visit failed",
+    "last_fail": "Previous visit failed (a late follow-up)",
     "last_n_viol": "Violations at the previous visit",
     "last_n_lvl3": "Serious violations at the previous visit",
     "last_routine_fail": "Last routine inspection failed",
@@ -341,7 +341,7 @@ def plot_hit_rate_bar(results, title, path=None, k=K, final=None, note=""):
     ax.set_ylim(0, 108)
     ax.set_title(title)
     ax.tick_params(axis="x", labelsize=11)
-    footnote = f"First {k:.0%} of inspections, riskiest first. Thin lines on the bars show 95% ranges. {note}"
+    footnote = f"First {k:.0%} of visits, riskiest first. Thin lines on the bars show 95% ranges. {note}"
     ax.text(0.0, -0.31, textwrap.fill(footnote, 98), transform=ax.transAxes, fontsize=11, va="top")
     fig.tight_layout()
     if path:

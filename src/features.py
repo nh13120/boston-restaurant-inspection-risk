@@ -34,7 +34,7 @@ HISTORY_COLUMNS = ["prior_n", "prior_n_3y", "is_first", "prior_fail_rate", "prio
 #   2. a name context: after a role word ("PIC Jane", "owner: Jane Doe"), after "spoke with",
 #      around a certificate, or before "is the certified ...";
 #   3. after an honorific ("Mr. Doe").
-# A regex cannot recognize every name. The README lists that as a limitation.
+# A regex cannot recognize every name, so the masking is best effort (see docs/data_dictionary.md).
 FIRST_NAMES = {line.strip() for line in (Path(__file__).parent / "first_names.txt").read_text().splitlines()
                if line.strip() and not line.startswith("#")}
 

@@ -3,6 +3,8 @@
 All functions take the true outcomes and the risk scores of a set of past inspections
 (the test period) and return plain numbers: failures found, inspections saved, weeks gained.
 """
+import textwrap
+
 import numpy as np
 import pandas as pd
 
@@ -157,7 +159,6 @@ def severity_in_first_visits(n_serious, score, k=K):
 
 def plot_share_bar(shares, best, title, ylabel, footnote, path=None):
     """Three bars (random order, the rule, the model) for a share between 0 and 1."""
-    import textwrap
 
     import matplotlib.pyplot as plt
     from src.evaluate import FIGURE_LABELS, MODEL_COLORS, set_plot_style
@@ -394,9 +395,13 @@ def plot_impact_bar(impact, best, title, path=None, k=K):
     ax.set_ylabel(f"Failed inspections found per year\nin the first {k:.0%} of visits")
     ax.set_ylim(0, max(r[1] for r in rows) * 1.32)
     ax.set_title(title)
-    ax.text(0.0, -0.3, f"Each bar: the first {visits:,.0f} of about {visits / k:,.0f} routine inspections a year. Over the whole year the total\n"
-                        f"(about {total:,.0f} failed inspections) is the same in any order. The gain is finding them earlier.",
-            transform=ax.transAxes, fontsize=11)
+    other = [v for q, v in value.items() if q.startswith(extra) and ("(S1)" in q or "without likely late follow-ups" in q)]
+    range_note = (f" The lead over a rule is {min(other):,.0f} to {extra_rule:,.0f}, depending on the rule and on whether "
+                  f"late follow-ups count." if other else "")
+    footnote = (f"Each bar: the first {visits:,.0f} of about {visits / k:,.0f} routine inspections a year. Over the whole year "
+                f"the total (about {total:,.0f} failed inspections) is the same in any order. The gain is finding them "
+                f"earlier.{range_note}")
+    ax.text(0.0, -0.2, textwrap.fill(footnote, 92), transform=ax.transAxes, fontsize=11, va="top")
     fig.tight_layout()
     if path:
         fig.savefig(path, bbox_inches="tight")

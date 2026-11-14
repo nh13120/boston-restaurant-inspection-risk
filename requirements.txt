@@ -7,6 +7,7 @@ scipy==1.18.1
 lightgbm==4.7.0
 matplotlib==3.11.2
 transformers==5.22.2
+huggingface_hub==2.4.0
 torch==2.15.0
 jupyter==1.1.1
 nbconvert==7.17.2

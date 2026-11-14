@@ -24,7 +24,7 @@ Source: `Project.pdf`, sections "From a problem to an AI solution", "Project 1: 
 
 | # | Check | Where |
 |---|---|---|
-| D1 | Is the dataset public, with its source, license and pull date recorded? | README, `data/raw/pull_metadata.json` |
+| D1 | Is the dataset public, with its source, license and pull date recorded? | README, `docs/pull_metadata.json` |
 | D2 | Is the repo free of confidential, proprietary or personally identifiable information (no owner names in any saved file)? | `src/data_pull.py` (owner columns never requested), notebook 01 (privacy checks) |
 | D3 | Is the data preparation documented and reproducible (cleaning, collapsing to one row per inspection, label, features)? | notebook 01, `src/features.py` |
 | D4 | Is there a data dictionary? | `docs/data_dictionary.md` |

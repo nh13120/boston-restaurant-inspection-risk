@@ -1,57 +1,42 @@
 # Which Boston restaurants should be inspected first?
 
-New to GitHub? [START_HERE.md](START_HERE.md) shows the key charts and where everything is.
+Written for a data scientist or ML engineer at Boston's Inspectional Services Department (ISD). ISD makes about 6,000 routine restaurant inspections a year, and 59% end in a failure. The model ranks upcoming inspections by risk of failing, so planners can schedule the riskiest restaurants first.
 
-Boston's Inspectional Services Department (ISD) makes about 6,000 routine restaurant inspections a year, and 59% end in a failure. This repo ranks upcoming inspections by risk of failing, so planners can schedule the riskiest restaurants first each quarter and find serious violations sooner. We could not confirm how ISD orders visits today: "random order" is our assumption.
+## How it works
 
-## Data
+1. Data (`src/data_pull.py`): [Food Establishment Inspections](https://data.boston.gov/dataset/food-establishment-inspections) from Analyze Boston (PDDL license), pulled on 2026-11-11 without owner names. Keep `data/` unpublished: raw comments contain names and emails.
+2. Features (`src/features.py`): one row per routine inspection (re-inspections within 30 days of a failure are dropped), label 1 = any fail code. The 17 features use only the license's earlier inspections, plus month and today's type and location.
+3. Models (`src/models.py`, `src/text.py`, `src/finetune.py`): M1, the final model, is LightGBM on those features. M2 adds the previous inspection's comments, embedded with a frozen `all-MiniLM-L6-v2`, and M3 fine-tunes that encoder.
+4. Evaluation (`src/evaluate.py`): train 2016 to 2022, validation 2023, test 2024 onward (17,171 inspections). Settings were frozen (`docs/FROZEN_CONFIG.json`) before the test years were scored. Final fits use 2016 to 2023.
 
-[Food Establishment Inspections](https://data.boston.gov/dataset/food-establishment-inspections), Analyze Boston, PDDL license, pulled on 2026-11-11 through the CKAN SQL API (query in `docs/pull_metadata.json`). Owner names are never downloaded. `data/` is git-ignored and must stay unpublished: raw comments contain names and emails.
-
-## Setup and run
+## Reproduce
 
 ```bash
 python3.13 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt     # macOS: then follow docs/setup_macos.md (LightGBM needs OpenMP)
-cd notebooks
-for nb in 01_data 02_baselines 03_models 04_results; do
+cd notebooks && for nb in 01_data 02_baselines 03_models 04_results; do
   jupyter nbconvert --to notebook --execute --inplace $nb.ipynb
 done
 ```
 
-About 7 minutes on an M-series laptop, plus a first data pull (10 minutes) and a 90 MB encoder download. For our exact numbers (verified on Apple Silicon), install from `requirements-lock.txt`, get `inspections_snapshot.parquet` from the repo owner and place it in `data/raw/`.
+About 10 minutes on an M-series laptop including the data pull, plus a 90 MB encoder download. The city still edits the table: a pull two days after ours had 34 more rows and moved each hit rate by less than 0.01 point. For our exact numbers (verified on Apple Silicon), install from `requirements-lock.txt`, get `inspections_snapshot.parquet` from the repo owner and place it in `data/raw/`. Notebook 05 (M3) is optional: about 40 minutes on a GPU.
 
-## Results on the test years (2024 to Nov 2026, 17,171 inspections)
-
-Each method ranks the inspections, and we look at the first 20%. Settings were frozen on 2023 before the test years were scored. M3 was added after the five planned models were scored, with its own freeze (optional notebook 05, about 40 minutes on a GPU).
+## Results on the first 20% of visits, test years 2024 to Nov 2026
 
 | Method | Visits that find a failure (95% CI) | Share of all failures found | Share of serious violations found |
 |---|---|---|---|
 | B0 Random order (assumed status quo) | 59.0% (58 to 60) | 20.0% | 20% |
 | B1 Past failure rate (business rule) | 80.3% (78 to 82) | 27.2% | 33% |
-| B2 Logistic regression on history | 87.0% (85 to 88) | 29.5% | 39% |
-| M1 LightGBM on history (final model) | 88.1% (86 to 89) | 29.9% | 40% |
-| M2 LightGBM on history + comment embeddings | 88.8% (87 to 90) | 30.1% | 40% |
-| M3 LightGBM on history + fine-tuned text encoder (added later) | 89.1% (88 to 90) | 30.2% | 40% |
+| B2 Logistic regression | 87.0% (85 to 88) | 29.5% | 39% |
+| M1 LightGBM (final model) | 88.1% (86 to 89) | 29.9% | 40% |
+| M2 M1 + comment embeddings | 88.8% (87 to 90) | 30.1% | 40% |
+| M3 M1 + fine-tuned text encoder | 89.1% (88 to 90) | 30.2% | 40% |
 
-ISD makes every routine inspection sooner or later, so the yearly total (about 3,544 failed inspections) is the same in any order. Ranking changes when problems are found. In the first 20% of visits (1,201 a year), M1 finds 349 more failed inspections than a random order (CI 333 to 364) and 42 to 94 more than a hand rule. Within a quarter, a visit that ends in a failure comes 1.1 weeks sooner (0.8 to 0.9 with a hand rule), and one that ends in a pass 1.6 weeks later.
-
-We recommend ranking by inspection history, where a hand rule already brings most of the gain, and returning sooner to restaurants that pass but rank high: 60% failed their next routine inspection, against 43% of other passes. Zip code and neighborhood are model inputs: Dorchester gets 46% of its inspections among the first visits and Roxbury 19%, at the same fail rate. Dropping them cost 0.5 points on 2023, within noise. We suggest ISD does so, but the numbers and `results/priority_list.csv` here include location.
-
-## Modeling choices
-
-- One row per routine inspection, label 1 = any fail code. "Routine" is inferred: visits within 30 days of a failure are re-inspections, dropped after the features are built.
-- History features use only earlier inspections of the same license (records since 2006). Location and type are today's values.
-- Time split: train 2016 to 2022, validation 2023, test 2024 onward. Final fits use 2016 to 2023.
-- Deep learning on text: M2 adds the previous inspection's comments, embedded with a frozen `all-MiniLM-L6-v2` (32 PCA components). M3 fine-tunes that encoder on the last routine inspection's comments.
-- Intervals are bootstraps over whole restaurants. M1 was fixed as the final model on validation, where text added nothing.
+Intervals are bootstraps over whole restaurants. The yearly total (about 3,544 failed inspections) is the same in any order: ranking changes when they are found. In the first 20% of visits (1,201 a year), M1 finds 349 more of them than a random order (CI 333 to 364) and 42 to 94 more than a hand rule.
 
 ## Limitations
 
-- The status quo is assumed, and 20% is an illustrative capacity. M1's lead over the rule is 7.8 points overall and 3.3 to 3.7 on two robustness slices. Hit rates fell from 90.1% in 2024 to 84.9% in 2026.
-- The algorithm adds about a point and the text another: M1 leads logistic regression by 1.1 points (CI 0.3 to 1.9), and M3 leads M1 by 1.0 (CI 0.3 to 1.8). Comments alone reach 84%: they mostly repeat what the history says.
-- Scores are estimates, not findings about a business. The priority list names businesses, so read `results/priority_list_note.md` first. Name masking in comments is best effort.
-
-## Repo map
-
-`notebooks/` 01 data, 02 baselines, 03 models, 04 results. `src/` logic. `preds/` scores. `results/` tables, 10 figures, priority list. `docs/` decisions, data dictionary, frozen config.
+- We could not confirm how ISD orders visits today: "random order" is our assumption, and 20% is an illustrative capacity. Hit rates fell from 90.1% in 2024 to 84.9% in 2026.
+- M1 was fixed as the final model on validation, where text added nothing. On test it leads logistic regression by 1.1 points (CI 0.3 to 1.9), and M3, added later with its own freeze, leads M1 by 1.0 (CI 0.3 to 1.8).
+- Zip code and neighborhood are inputs: Dorchester gets 46% of its inspections among the first visits and Roxbury 19%, at the same fail rate. Dropping them cost 0.5 points on 2023, within noise, and we suggest ISD does so.
+- Scores are estimates, not findings about a business: read `results/priority_list_note.md` before using `results/priority_list.csv`. See also `docs/DECISIONS.md` and, for charts, [START_HERE.md](START_HERE.md).

@@ -65,14 +65,16 @@ def _compare_with_reference(meta, reference):
     """Tell the user whether this snapshot is the one the committed results were built on."""
     reference = Path(reference)
     if not reference.exists():
-        return
+        return False
     ref = json.loads(reference.read_text())
     if ref["content_sha256"] == meta["content_sha256"]:
         print("Snapshot matches the reference in docs/pull_metadata.json.")
+        return True
     else:
         print(f"WARNING: snapshot differs from the reference ({meta['row_count']:,} rows here, "
               f"{ref['row_count']:,} in the reference). The city has edited the table since "
               f"{ref['pulled_at_utc']}, so results may differ slightly from the committed ones.")
+        return False
 
 
 def pull_inspections(raw_dir="../data/raw", force=False, reference="../docs/pull_metadata.json"):
@@ -83,7 +85,11 @@ def pull_inspections(raw_dir="../data/raw", force=False, reference="../docs/pull
         print(f"Snapshot found, skipping the pull: {snapshot}")
         df = pd.read_parquet(snapshot)
         # Hash the file's content itself, so an edited or partial snapshot is noticed.
-        _compare_with_reference({"content_sha256": content_hash(df), "row_count": len(df)}, reference)
+        same = _compare_with_reference({"content_sha256": content_hash(df), "row_count": len(df)}, reference)
+        if same and not meta_file.exists():
+            # A snapshot copied in without its metadata (the README's exact-numbers path):
+            # it is the reference snapshot, so the reference metadata describes it.
+            meta_file.write_text(Path(reference).read_text())
         return df
 
     raw_dir.mkdir(parents=True, exist_ok=True)

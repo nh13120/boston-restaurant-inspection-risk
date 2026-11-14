@@ -2,7 +2,7 @@
 
 Each entry: what we chose, the alternatives, and one line of reasoning.
 
-"The brief" in this log is the team's project plan, written before any data was pulled. It fixed the problem, the five models (B0, B1, B2, M1, M2), the metrics at a 20% capacity, the time split, the hard rules (no leakage, tune on validation only, test scored after a freeze, no owner names) and the review gates. The gates were independent reviews run after each stage. Their findings are in `REVIEW_LOG.md`.
+"The brief" in this log is the team's project plan, written before any data was pulled. It fixed the problem, the five models (B0, B1, B2, M1, M2), the metrics at a 20% capacity, the time split, the hard rules (no leakage, tune on validation only, test scored after a freeze, no owner names) and the review gates. The gates were independent reviews run after each stage. This log records what changed after each one.
 
 ## Phase 0: setup
 
@@ -52,7 +52,7 @@ Reasoning: `HE_Filed` visits list violations but ISD does not require a follow-u
 
 ## Gate 1 changes (data and leakage audit)
 
-The reviewer found no leakage. These decisions answer its findings. Details are in `REVIEW_LOG.md`.
+The reviewer found no leakage. These decisions answer its findings.
 
 **G1.1 History before 2016.** The brief filters the pull to 2016 onward. With that filter, 60% of 2016 rows looked like a restaurant's first inspection, and `prior_n` meant something different every year. Chose to pull all years (from April 2006) and use the inspections before 2016 as history only. The model table and the split still start in 2016. Alternative: drop 2016 from training as a burn-in year, which would change the fixed split. After the change, `is_first` is 5 to 6% in every year.
 
@@ -195,7 +195,6 @@ Left as is, for the team to decide:
 - The text model is a frozen encoder on the previous visit's comments. A variant on the last routine inspection's comments, with a bag-of-words comparison, would give the deep-learning part a fairer chance. It needs new models.
 - The model without location was not scored on the test years, because the settings were frozen before the test. Scoring it now and labelling it as after the fact is an option.
 - Timing, severity and after-a-pass numbers have no intervals (the after-a-pass group is 299 inspections).
-- `REVIEW_LOG.md` and `STATUS.md` are process notes. They can leave the repo before it goes public.
 
 ## After the freeze: text experiments (validation only)
 

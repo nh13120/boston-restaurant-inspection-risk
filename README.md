@@ -39,4 +39,12 @@ Intervals are bootstraps over whole restaurants. The yearly total (about 3,544 f
 - We could not confirm how ISD orders visits today: "random order" is our assumption, and 20% is an illustrative capacity. Hit rates fell from 90.1% in 2024 to 84.9% in 2026.
 - M1 was fixed as the final model on validation, where text added nothing. On test it leads logistic regression by 1.1 points (CI 0.3 to 1.9), and M3, added later with its own freeze, leads M1 by 1.0 (CI 0.3 to 1.8).
 - Zip code and neighborhood are inputs: Dorchester gets 46% of its inspections among the first visits and Roxbury 19%, at the same fail rate. Dropping them cost 0.5 points on 2023, within noise, and we suggest ISD does so.
-- Scores are estimates, not findings about a business: read `results/priority_list_note.md` before using `results/priority_list.csv`. See also `docs/DECISIONS.md` and, for charts, [START_HERE.md](START_HERE.md).
+- Scores are estimates, not findings about a business: read `results/priority_list_note.md` before using `results/priority_list.csv`.
+
+## Repo map
+
+- [START_HERE.md](START_HERE.md): the key charts and a plain-language summary.
+- `notebooks/`: the pipeline, run in order (01 data, 02 baselines, 03 models, 04 results, 05 optional fine-tuning). `src/` holds the functions they call.
+- `preds/`: one risk score per inspection for each model (`_val` is 2023, `_test` is 2024 onward).
+- `results/`: tables, figures and the priority list, indexed in [results/README.md](results/README.md).
+- `docs/`: decisions log, data dictionary, frozen settings, macOS setup.

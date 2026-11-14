@@ -394,7 +394,7 @@ def plot_neighborhoods(neighborhoods, best, title, path=None, k=K):
     nb = neighborhoods.sort_values("share_in_first_visits")
     labels = [f"{n} (fails {f:.0%})" for n, f in zip(nb["neighborhood"], nb["fail_rate"])]
     fig, ax = plt.subplots(figsize=(9.5, 0.42 * len(nb) + 2.4))
-    ax.barh(labels, nb["share_in_first_visits"] * 100, color=MODEL_COLORS[best], label="Machine-learning model")
+    ax.barh(labels, nb["share_in_first_visits"] * 100, color=MODEL_COLORS[best], label="LightGBM model (uses location)")
     ax.scatter(nb["share_in_first_visits_rule_without_location"] * 100, labels, marker="|", s=260, linewidths=2.5,
                color="black", zorder=3, label="Hand rule without location")
     ax.axvline(k * 100, color="#9a9a9a", linestyle="--", linewidth=1.2)

@@ -21,16 +21,16 @@ MODEL_LABELS = {
     "M1_lgbm": "LightGBM, history",
     "M2_lgbm_text": "LightGBM, history + text",
 }
-# Plain names for slides. "\n" keeps bar labels narrow.
+# Names for slides: the method, then what it reads. "\n" keeps bar labels narrow.
 FIGURE_LABELS = {
     "B0_random": "Random order\n(assumed status quo)",
     "B1_past_fail_rate": "Simple rule:\npast failure rate",
-    "B2_logreg": "Simple statistical\nmodel",
-    "M1_lgbm": "Machine-learning\nmodel",
-    "M2_lgbm_text": "Machine learning +\ninspector comments",
+    "B2_logreg": "Logistic regression:\ninspection history",
+    "M1_lgbm": "LightGBM:\ninspection history",
+    "M2_lgbm_text": "LightGBM:\nhistory + comments",
     # Notebook 05 (fine-tuned text encoder), used only in the text figure
-    "T_finetuned_text_only": "Inspector\ncomments only",
-    "M3_lgbm_finetuned": "Machine learning +\ncomments, fine-tuned",
+    "T_finetuned_text_only": "Language model:\ncomments only",
+    "M3_lgbm_finetuned": "LightGBM: history +\nfine-tuned comments",
 }
 MODEL_COLORS = {
     "B0_random": "#9a9a9a", "B1_past_fail_rate": "#dd8452", "B2_logreg": "#8172b3",

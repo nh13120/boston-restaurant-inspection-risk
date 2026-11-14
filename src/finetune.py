@@ -3,7 +3,7 @@
 M2 uses the encoder frozen: it turns comments into numbers without ever seeing our labels.
 Here the same encoder keeps training, with a small classification head on top, so that it
 learns which words in a previous visit's comments go with a failed next inspection.
-(Lecture 12 pattern: AutoModelForSequenceClassification, AdamW, a few epochs.)
+(Standard recipe: AutoModelForSequenceClassification, AdamW, a few epochs.)
 
 Leakage rule: a text model only ever scores inspections dated AFTER everything it was
 trained on. `forward_text_scores` enforces this with time blocks.

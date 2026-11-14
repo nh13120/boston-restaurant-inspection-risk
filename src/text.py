@@ -1,6 +1,6 @@
 """Turn inspector comments into numbers with a frozen pre-trained BERT-style encoder.
 
-Lecture 12 pattern: AutoTokenizer + AutoModel, no training, mean pooling over the
+Standard recipe: AutoTokenizer + AutoModel, no training, mean pooling over the
 real (non-padding) tokens. The 384-dimensional sentence vectors are then compressed
 to 32 principal components (PCA fitted on training rows only).
 """

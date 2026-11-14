@@ -33,7 +33,7 @@ NEVER_FEATURES = {"label_fail", "result", "result_codes", "n_viol", "n_lvl1", "n
                   "license_issue_date", "businessname", "descript", "inspection_id", "licenseno"}
 assert not NEVER_FEATURES & set(HISTORY_FEATURES)
 
-# Lecture 6 style: a small, explicit grid (3 x 2 x 2 = 12 combinations).
+# A small, explicit grid (3 x 2 x 2 = 12 combinations).
 LGBM_GRID = {
     "num_leaves": [7, 15, 31],
     "learning_rate": [0.02, 0.05],

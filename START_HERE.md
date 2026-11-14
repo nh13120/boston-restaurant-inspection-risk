@@ -1,12 +1,12 @@
-# Start here
+# Results at a glance
 
-This page is for teammates who want to see the results without learning Git. You only need a web browser.
+A visual summary for readers who want the findings before the code. The [README](README.md) covers the method, the full results table and the steps to reproduce them.
 
-The project ranks Boston's routine restaurant inspections by how likely each one is to fail, so the city can visit the riskiest places first. The [README](README.md) has the full results table and the technical details.
+The project ranks Boston's routine restaurant inspections by how likely each one is to fail, so the city can visit the riskiest places first.
 
 ## The results in four charts
 
-How often a visit finds a failure, if inspectors make the riskiest 20% of visits first. Random order finds a failure 59% of the time, a simple rule 80%, and our model 88%.
+How often a visit finds a failure, if inspectors make the riskiest 20% of visits first. Random order finds a failure 59% of the time, a simple rule 80%, and the model 88%.
 
 ![Hit rate by method](results/figures/hit_rate_bar.png)
 
@@ -26,39 +26,30 @@ The other charts are in [results/figures](results/figures).
 
 ## Where things are
 
-| Folder or file | What's in it | Open it when you want to |
+| Folder or file | What it holds | Open it to |
 |---|---|---|
-| [README.md](README.md) | One-page summary: results, method, limitations | Quote a number or explain the method |
-| [results/figures](results/figures) | All 10 charts as PNG images | Put a chart on a slide |
+| [README.md](README.md) | One-page technical summary: method, results, limitations | Understand or reproduce the method |
+| [results/figures](results/figures) | All 10 charts as PNG images | Reuse a chart |
 | [results/results.csv](results/results.csv) | The main results table | Check an exact number |
 | [results/impact.csv](results/impact.csv) | Impact numbers, each with a line on how it was computed | Check an impact claim |
+| [results/README.md](results/README.md) | An index of every results file | Find a specific table |
 | [results/priority_list.csv](results/priority_list.csv) | Restaurants ranked by estimated risk | Read [the note](results/priority_list_note.md) first: the scores are estimates, not findings about any business |
 | [notebooks](notebooks) | The analysis, step by step (01 data, 02 baselines, 03 models, 04 results, 05 fine-tuning) | See how a number was produced |
-| [docs/DECISIONS.md](docs/DECISIONS.md) | Why we made each modeling choice | Answer "why did you do it this way?" |
-| [src](src) | The Python code the notebooks call | You can skip this folder |
+| [docs/DECISIONS.md](docs/DECISIONS.md) | Each modeling choice, with the alternatives considered | See why a choice was made |
+| [src](src) | The Python code the notebooks call | Read how a step is implemented |
 
-The raw data is not in the repo on purpose. The inspector comments contain people's names and emails.
+The raw data is not in the repo: the inspector comments contain people's names and emails.
 
-## How to use GitHub here
-
-Click any file name to open it. GitHub shows charts as images, CSV files as tables you can search, and notebooks with their code and outputs, so you don't need to install anything.
-
-To save one chart, open it and click the download button (the arrow icon at the top right of the file view).
-
-To get a copy of everything, go to the repo's main page, click the green **Code** button, then **Download ZIP**.
-
-To suggest a change, message the repo owner or open an issue (the **Issues** tab, then **New issue**). Please don't edit files directly in the browser: every edit goes straight into the shared history.
-
-## Terms you'll see
+## Terms
 
 | Term | Meaning |
 |---|---|
 | Hit rate | Share of visits that find a failure |
-| First 20% of visits | The riskiest fifth of inspections, visited first. Our stand-in for limited inspector time |
-| Random order | Our assumption for how inspections are ordered today. We could not confirm the city's actual method |
+| First 20% of visits | The riskiest fifth of inspections, visited first. It stands in for limited inspector time |
+| Random order | The assumed way inspections are ordered today. The city's actual method could not be confirmed |
 | Simple rule | Rank restaurants by how often they failed before. No model needed |
-| Validation year (2023) | The year we used to choose settings |
-| Test years (2024 to 2026) | Years the model never saw while we chose settings. All headline numbers come from here |
-| LightGBM | The machine-learning model we chose: many small decision trees, each correcting the last |
+| Validation year (2023) | The year used to choose settings |
+| Test years (2024 to 2026) | Years the model never saw while settings were chosen. All headline numbers come from here |
+| LightGBM | The machine-learning model chosen: many small decision trees, each correcting the last |
 | Embeddings | Comment text turned into numbers by a language model so the main model can use it |
 | 95% range | How much a number could move by chance. Bars with overlapping ranges are not clearly different |

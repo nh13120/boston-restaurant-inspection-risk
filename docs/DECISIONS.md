@@ -6,15 +6,15 @@ Each entry: what we chose, the alternatives, and one line of reasoning.
 
 ## Phase 0: setup
 
-**D0.1 Environment.** Chose a local `.venv` built with Python 3.13. Alternative: reuse the class venv at `ai-edge/ai-edge.venv`. That folder does not exist on this machine, so there was nothing to reuse.
+**D0.1 Environment.** A local `.venv` built with Python 3.13.
 
-**D0.2 Patterns reused from the lecture notebooks.**
+**D0.2 Standard patterns the code follows.**
 
-- Lecture 6 (`~/Desktop/Semester 1/ai-edge/Lecture 6/15.071_Lecture6_code/15.071_Lecture6_code/15.071_Lecture6.ipynb`): `LGBMClassifier(random_state=42, verbosity=-1, n_jobs=-1)`, a small explicit parameter grid, an `evaluate(...)` helper that returns one row per model, and results collected into a single DataFrame. The lecture tunes with `GridSearchCV` and grouped folds. We loop over the grid by hand because our split is by time: the validation set is the year 2023, which `GridSearchCV` would not respect without extra setup.
-- Lecture 11 (`~/Desktop/Semester 1/ai-edge/Lecture 11/15.071_Lecture11_code/15.071_Lecture11_code/15.071_Lecture11.ipynb`): `sklearn.decomposition.PCA` to compress embeddings, and the rule that any fitted transform (scaler, PCA) is fit on training rows only.
-- Lecture 12 (`~/Desktop/Semester 1/ai-edge/Lecture 12/15.071_Lecture12_code/15.071_Lecture12_code/15.071_Lecture12.ipynb`): `AutoTokenizer` and `AutoModel` with the encoder frozen under `torch.no_grad()`, batches moved to `DEVICE` (`mps` if available), mean pooling as `(hidden * mask).sum(1) / mask.sum(1)`, features cached to disk behind a `recompute` flag, and the final refit on train + validation before scoring test.
+- LightGBM: `LGBMClassifier(random_state=42, verbosity=-1)`, a small explicit parameter grid, an `evaluate(...)` helper that returns one row per model, and results collected into a single DataFrame. We loop over the grid by hand because our split is by time: the validation set is the year 2023, which `GridSearchCV` would not respect without extra setup.
+- Fitted transforms: `sklearn.decomposition.PCA` compresses the embeddings, and any fitted transform (scaler, PCA) is fit on training rows only.
+- Text encoder: `AutoTokenizer` and `AutoModel` with the encoder frozen under `torch.no_grad()`, batches moved to `DEVICE` (`mps` if available), mean pooling as `(hidden * mask).sum(1) / mask.sum(1)`, features cached to disk behind a `recompute` flag, and the final refit on train + validation before scoring test.
 
-**D0.3 Seed.** 42 everywhere, as the project brief requires. The lectures use 1234 in places, and the brief takes priority.
+**D0.3 Seed.** 42 everywhere, as the project brief requires.
 
 **D0.4 LightGBM on macOS.** LightGBM needs the OpenMP library `libomp.dylib`, which this Mac does not have system-wide. Chose to add scikit-learn's bundled copy to LightGBM's search path inside `.venv` (`install_name_tool -add_rpath "@loader_path/../../sklearn/.dylibs"` on `lib_lightgbm.dylib`, then `codesign --force --sign -`). Alternative: `brew install libomp`, the standard fix, which the README recommends to other users. We did not run it here because it changes the system outside this repo.
 
@@ -64,7 +64,7 @@ The reviewer found no leakage. These decisions answer its findings.
 
 **G1.5 `licstatus` leaves the model table.** It describes the license today, so it would be future information as a feature. It stays in `inspections_full.parquet` for the priority list. `models.py` also refuses any outcome-side column as a feature. The other static fields (`zip`, `neighborhood`, type) are also as of the pull date. We accept that, because a restaurant's location and type rarely change, and the data dictionary says so.
 
-**G1.6 Smaller fixes.** Dates are converted to Boston time before the calendar date is taken. 224 exact duplicate rows are dropped. The leakage check now compares all 13 history columns with a by-hand recomputation for 300 random restaurants. `requirements.txt` is pinned. The lecture paths in D0.2 no longer show the local user name.
+**G1.6 Smaller fixes.** Dates are converted to Boston time before the calendar date is taken. 224 exact duplicate rows are dropped. The leakage check now compares all 13 history columns with a by-hand recomputation for 300 random restaurants. `requirements.txt` is pinned.
 
 **G1.7 Round 2: masking again, and what "pass" means.** The second review found at least 94 comments with names that the first rewrite missed: common names absent from the list (Tony, Mike, Mary), names in capitals, and forms such as "PIC Tom stated". We extended the name list and the contexts (D2.5). Run against the reviewer's own name list, the scan now leaves 3 name-like strings in 324,528 comment pieces. Notebook 01 no longer claims that nothing personal remains. The reviewer also asked us to state that a "pass" means "no follow-up required": 97% of `HE_Filed` visits list at least one violation. The data dictionary now says so. Two things were noted as limitations and left unchanged: the city sometimes edits comment text after the inspection date (13 model rows mention a later date), and history starts in 2006, so `prior_n` is understated for the oldest restaurants.
 
@@ -72,7 +72,7 @@ The reviewer found no leakage. These decisions answer its findings.
 
 **D4.1 Grid.** `num_leaves` 7, 15, 31; `learning_rate` 0.02, 0.05; `n_estimators` 100, 500 (12 combinations), with early stopping after 50 rounds without a better validation AUC. `n_estimators` is an upper limit, and the frozen value is the number of trees early stopping kept. Alternative: caps of 300 and 1000, which early stopping never reached, so half the grid was a duplicate. Selection is on validation `precision_at_k`, ties broken by AUC, then by the smaller model.
 
-**D4.2 Deterministic training.** LightGBM runs with `n_jobs=1`, `deterministic=True` and `force_row_wise=True`, so a rerun gives identical numbers. The lecture uses `n_jobs=-1`. The data is small enough that one thread takes seconds.
+**D4.2 Deterministic training.** LightGBM runs with `n_jobs=1`, `deterministic=True` and `force_row_wise=True`, so a rerun gives identical numbers. Alternative: `n_jobs=-1`. The data is small enough that one thread takes seconds.
 
 **D4.3 Ties in the ranking.** When two inspections have the same score, `evaluate.py` orders them with a seeded random draw. Otherwise a rule with many tied scores, such as B1, would be judged by the row order of the table.
 
@@ -84,15 +84,15 @@ The reviewer found no leakage. These decisions answer its findings.
 
 ## Improvement loop (one round, validation only)
 
-An experimenter subagent analyzed the validation errors and proposed changes. The rule set in advance: keep a change only if validation `precision_at_k` improves by more than the half-width of M1's bootstrap interval (about 2 points).
+A separate error analysis of the validation year proposed changes. The rule set in advance: keep a change only if validation `precision_at_k` improves by more than the half-width of M1's bootstrap interval (about 2 points).
 
 What the error analysis found: M1 and M2 make the same mistakes (1,025 of 1,104 top rows in common). Almost every top-ranked row had a failed last routine inspection. The blind spot is restaurants whose last routine inspection was clean (0 to 2 violations): 41% of them still fail, and they hold more than half of the failures the model misses.
 
-**IL.1 Routine-violation memory: tested, not kept.** Two features, `r3_mean_viol` (mean violations over the last three routine inspections) and `prev2_routine_n_viol` (violations at the routine inspection before the last one). Validation hit rate went from 90.49% to 91.30%, a gain of 0.82 points (95% CI -0.28 to +1.90), below the 2.00-point threshold. The experimenter's backtests on 2019 to 2022 also showed gains of 0.5 to 1.2 points each year, so the idea is probably real but small. The code stays in `features.candidate_memory_features` and notebook 03 reruns the test. It is the first thing to try with more data.
+**IL.1 Routine-violation memory: tested, not kept.** Two features, `r3_mean_viol` (mean violations over the last three routine inspections) and `prev2_routine_n_viol` (violations at the routine inspection before the last one). Validation hit rate went from 90.49% to 91.30%, a gain of 0.82 points (95% CI -0.28 to +1.90), below the 2.00-point threshold. Backtests on 2019 to 2022 also showed gains of 0.5 to 1.2 points each year, so the idea is probably real but small. The code stays in `features.candidate_memory_features` and notebook 03 reruns the test. It is the first thing to try with more data.
 
-**IL.2 Comment truncation: tested by the experimenter, not proposed.** M2's validation hit rate at 32, 64, 128, 256 and 512 tokens was 89.8%, 90.1%, 89.7%, 90.2% and 90.4%. Every difference from 256 is within noise, and none beats M1. We keep 256.
+**IL.2 Comment truncation: tested, not proposed.** M2's validation hit rate at 32, 64, 128, 256 and 512 tokens was 89.8%, 90.1%, 89.7%, 90.2% and 90.4%. Every difference from 256 is within noise, and none beats M1. We keep 256.
 
-**IL.3 Other feature groups the experimenter tried and dropped.** Ten follow-up-cycle features (89.8%), four result-code features (90.2%) and two comment-size features (89.8%), against M1's 90.5%. None was proposed.
+**IL.3 Other feature groups tried and dropped.** Ten follow-up-cycle features (89.8%), four result-code features (90.2%) and two comment-size features (89.8%), against M1's 90.5%. None was proposed.
 
 No third proposal was made, and there is no second round, because more rounds would overfit the validation year.
 
@@ -110,7 +110,7 @@ No third proposal was made, and there is no second round, because more rounds wo
 
 **G2.7 Refit on train + validation for the test run.** The brief asks for this, PCA included. "PCA fitted on train only" therefore means: on validation, fitted on 2016 to 2022; for the test run, fitted on 2016 to 2023. No test row is ever used to fit anything. The frozen config states it.
 
-**G2.8 A second simple rule, for honesty.** Ranking by the number of violations at the last routine inspection scores 84.4% on validation, 4 points above B1. B1 stays the business-rule benchmark because the brief defines it. Notebooks 02 and 04 show the second rule as a sensitivity row, and the README quotes the gain over a hand rule as a range (42 to 94 failed inspections a year).
+**G2.8 A second simple rule, as a sensitivity check.** Ranking by the number of violations at the last routine inspection scores 84.4% on validation, 4 points above B1. B1 stays the business-rule benchmark because the brief defines it. Notebooks 02 and 04 show the second rule as a sensitivity row, and the README quotes the gain over a hand rule as a range (42 to 94 failed inspections a year).
 
 **G2.4 M2 depends on the device.** Embeddings computed on `mps` and on CPU differ in the sixth decimal. That is enough to change which of M2's near-tied grid settings wins and to move its hit rate by about 0.3 points. The conclusion (text adds nothing measurable) holds on both. We keep `mps` as the brief asks, pin the encoder revision, and state the caveat in the frozen config and in notebook 03. M1, the final model, does not use embeddings and reruns bit for bit.
 
@@ -158,23 +158,23 @@ No third proposal was made, and there is no second round, because more rounds wo
 
 **G3.4 Figures and the priority list.** Figures use plain names ("Simple statistical model", "Machine-learning model"), the gains chart shows three curves with one callout, the importance chart shows the top 8 inputs and says they are signals, not causes. The priority list's column is `top_3_model_factors`, and factors that read as nonsense for a high score ("previous visit passed", "no take-out") are skipped. Location (zip and neighborhood) remains a factor and an input: it is 11% of the model's split gain, and the README flags it as a choice for ISD. Alternative: drop location from the model. Notebook 03 measures the cost on validation (0.5 points, within noise, see G4.3), but removing it now would change frozen settings after the test, so it is left as a recommendation.
 
-**G3.5 Round 2 (no blocker, no major).** The yearly gain varies more than its interval: 346, 407 and 288 failed inspections for 2024, 2025 and 2026, against an interval of 333 to 364 that only reflects which restaurants are sampled. The README and notebook 04 say so. The impact figure's callout now gives the range against the assumed current order (about 320 to 350) and the gain over the rule (94). "Inspections saved" is renamed "fewer visits needed to find as many failed inspections as the rule", because ISD makes every inspection anyway. The priority list's score column is `estimated_risk_pct`, and `results/priority_list_note.md` explains how to read the file. Business names stay in the list because the brief asks for them. Whether to publish a list that names businesses is a decision for the team before the repo goes public.
+**G3.5 Round 2 (no blocker, no major).** The yearly gain varies more than its interval: 346, 407 and 288 failed inspections for 2024, 2025 and 2026, against an interval of 333 to 364 that only reflects which restaurants are sampled. The README and notebook 04 say so. The impact figure's callout now gives the range against the assumed current order (about 320 to 350) and the gain over the rule (94). "Inspections saved" is renamed "fewer visits needed to find as many failed inspections as the rule", because ISD makes every inspection anyway. The priority list's score column is `estimated_risk_pct`, and `results/priority_list_note.md` explains how to read the file. Business names stay in the list because the brief asks for them. Whether to publish a list that names businesses is an open decision for the team.
 
-## Gate 4 changes (reproducibility and grading)
+## Gate 4 changes (reproducibility and communication)
 
-**G4.1 Why earlier matters: severity.** The grader found the impact too thin: "failed inspections found earlier" does not say why it matters. Level 3 is the most severe violation class in ISD's records, and the number found at each inspection is in the data. In the test period, M1's first 20% of visits hold 40.0% of all level 3 violations, against 20% in random order and 33.2% with the rule, and 44.2% of those visits find at least one, against 24.0% and 37.1%. These are outcome measures computed from the frozen predictions. They were added after the test was scored, as reporting, and changed no model. `impact.csv` also expresses the timing gain as about 3,950 failed-inspection-weeks a year (3,544 failed inspections x 1.1 weeks).
+**G4.1 Why earlier matters: severity.** The reviewer found the impact too thin: "failed inspections found earlier" does not say why it matters. Level 3 is the most severe violation class in ISD's records, and the number found at each inspection is in the data. In the test period, M1's first 20% of visits hold 40.0% of all level 3 violations, against 20% in random order and 33.2% with the rule, and 44.2% of those visits find at least one, against 24.0% and 37.1%. These are outcome measures computed from the frozen predictions. They were added after the test was scored, as reporting, and changed no model. `impact.csv` also expresses the timing gain as about 3,950 failed-inspection-weeks a year (3,544 failed inspections x 1.1 weeks).
 
 **G4.2 Capacity and calibration.** 20% is an illustrative capacity. `results/capacity_sensitivity.csv` gives hit rates from 5% to 50%: M1's lead over the rule is largest when capacity is tight (93.7% against 73.2% at 5%) and nearly gone at 50%. `results/calibration.csv` shows that the estimated risks match observed fail rates by decile (for example 0.93 predicted, 0.93 observed in the top decile; the bottom deciles are under-predicted by 3 to 9 points).
 
 **G4.3 Location, made checkable.** `results/neighborhood_table.csv` shows what using location does: Dorchester and Roxbury both fail about 66% of the time, yet 46% of Dorchester's inspections land in the first 20% of visits against 19% of Roxbury's. Notebook 03 now measures the model without zip and neighborhood on validation: 90.0% against 90.5% (-0.5 points, CI -1.6 to +1.0, within noise). The earlier "about 0.3 points" came from a reviewer's run and was not reproducible in the repo. The frozen model keeps location. The recommendation to ISD is that it can be dropped at little or no cost, and that doing so is a policy choice.
 
-**G4.4 The priority list.** It gains `days_since_last_visit`, because the list ranks by risk only and does not know who is due. Its as-of date is the snapshot's end date, so a later re-pull gives the same list. Business names stay, as the brief asks. The repo is pushed private. Before making it public, the team should decide whether a named list belongs in it (dropping the `business_name` column is a one-line change in notebook 04).
+**G4.4 The priority list.** It gains `days_since_last_visit`, because the list ranks by risk only and does not know who is due. Its as-of date is the snapshot's end date, so a later re-pull gives the same list. Business names stay, as the brief asks. Whether a named list belongs in a public repo is an open decision for the team (dropping the `business_name` column is a one-line change in notebook 04).
 
 **G4.5 README and setup.** The README is cut to one page: the macOS OpenMP steps moved to `docs/setup_macos.md`, three README claims without code behind them were removed or replaced by reproducible numbers, and `requirements-lock.txt` pins every installed package (`requirements.txt` keeps the 13 direct ones, now with scipy). Hugging Face progress bars are silenced so executed notebooks stay small.
 
-**G4.6 Left as limitations.** The text model reads the previous visit's comments, which for about half the rows is a re-inspection record, and it has no "last routine inspection" variant or simple bag-of-words comparison. "Routine" is inferred from timing, so complaint-driven visits are included, and visit timing itself carries ISD's own targeting. These would need new features or models, which the grading round excluded.
+**G4.6 Left as limitations.** The text model reads the previous visit's comments, which for about half the rows is a re-inspection record, and it has no "last routine inspection" variant or simple bag-of-words comparison. "Routine" is inferred from timing, so complaint-driven visits are included, and visit timing itself carries ISD's own targeting. These would need new features or models, which this review round excluded.
 
-**G4.7 Round 2 of the grading.** A second grader caught an error of ours: the README attached the yearly gains against random order (346, 407, 288) to the sentence about ISD's actual order. `results_by_year.csv` now has both, and the README quotes both (against the actual order: 334, 393, 234). Other changes:
+**G4.7 Round 2.** A second reviewer caught an error: the README attached the yearly gains against random order (346, 407, 288) to the sentence about ISD's actual order. `results_by_year.csv` now has both, and the README quotes both (against the actual order: 334, 393, 234). Other changes:
 
 - The README says in its first paragraph that we could not confirm how ISD orders visits today. That is the main gap of the project, and no analysis of this dataset can close it.
 - It ends the results with a recommendation: rank by history, use the model without zip code, and return sooner to restaurants that pass but rank high. The last point rests on a new table, `results/after_a_pass.csv`: among test inspections that passed, the 299 that M1 ranked in its riskiest 20% failed their next routine inspection 59.5% of the time, against 42.8% for the other 5,076, and ISD returned to them only slightly sooner (median 158 against 176 days).
@@ -183,7 +183,7 @@ No third proposal was made, and there is no second round, because more rounds wo
 - The gains chart shows the best possible curve: a perfect ranking would find 34% of failures in the first 20% of visits, and M1 finds 30%.
 - Left open: intervals for the timing and severity numbers, and a figure for the neighborhood table.
 
-**G4.8 Round 3, the last one.** No blocker. The tester reproduced all 41 output files byte for byte in two runs, one of them with a fresh encoder download and no cached intermediate files. The grader scored Q1 4, Q2 4, Q3 4 and Q4 3 out of 5. Changes made after this round, without another review:
+**G4.8 Round 3, the last one.** No blocker. The tester reproduced all 41 output files byte for byte in two runs, one of them with a fresh encoder download and no cached intermediate files. Changes made after this round, without another review:
 
 - The README is cut to one page and its results table now shows, for each method, the share of all failures and of all serious violations found in the first 20% of visits. The AUC column moved out (it stays in `results/results.csv`).
 - `impact.csv` carries the hand-rule comparators that the README quotes: 0.8 to 0.9 weeks sooner with a hand rule against 1.1 with M1, 33% to 39% of serious violations against 40%, and the 42 and 74 that make up "42 to 94 more than a hand rule". The honest reading is that a hand rule on inspection history brings most of the gain and the model adds the rest.
@@ -191,22 +191,22 @@ No third proposal was made, and there is no second round, because more rounds wo
 
 Left as is, for the team to decide:
 
-- How ISD orders visits today is still an assumption. A sourced description of ISD's scheduling would lift the first and fourth graded questions more than any analysis here.
+- How ISD orders visits today is still an assumption. A sourced description of ISD's scheduling would strengthen the problem statement and the impact case more than any analysis here.
 - The text model is a frozen encoder on the previous visit's comments. A variant on the last routine inspection's comments, with a bag-of-words comparison, would give the deep-learning part a fairer chance. It needs new models.
 - The model without location was not scored on the test years, because the settings were frozen before the test. Scoring it now and labelling it as after the fact is an option.
 - Timing, severity and after-a-pass numbers have no intervals (the after-a-pass group is 299 inspections).
 
 ## After the freeze: text experiments (validation only)
 
-**PF.1 Is the text empty, or redundant?** Tried after the final review, at the author's request, to give the text a fairer chance. Everything here uses 2016 to 2022 for fitting and 2023 for scoring. The frozen settings, the test predictions and the final model are unchanged. Results are in `results/text_ablation_val.csv` and notebook 03, section 7.
+**PF.1 Is the text empty, or redundant?** Tried after the final review, to give the text a fairer chance. Everything here uses 2016 to 2022 for fitting and 2023 for scoring. The frozen settings, the test predictions and the final model are unchanged. Results are in `results/text_ablation_val.csv` and notebook 03, section 7.
 
 - A different text source, the comments of the last routine inspection, in place of the previous visit's. It is identical to the previous visit's text for 88.5% of rows, because re-inspection records copy the original comments. Added to the history features it gives 90.7% against M1's 90.5% (+0.2 points, within noise). Not adopted.
 - Text alone, with no history feature: 83.9% with embeddings of the previous visit, 85.5% with embeddings of the last routine inspection, 87.1% with a bag of words. For comparison, the past-failure-rate rule scores 80.4% and logistic regression on history 88.9%. So the comments carry real signal. They add nothing to M1 because they describe the violations that M1 already counts.
 - A bag-of-words comparator (TF-IDF on words and word pairs, compressed to 32 columns) does at least as well as the frozen encoder, alone (87.1% against 85.5%) and with history (90.9% against 90.7%, both within noise of M1). A general-purpose sentence embedding squeezed into 32 numbers loses detail that word counts keep.
 
-What this means for the project: the deep-learning part works as a text reader but is not what makes the ranking good. The honest claim is "comments alone get within a few points of the full history, and add nothing on top of it". Alternative not yet tried: fine-tuning the encoder on these comments (the course's Lecture 12 pattern), which is the natural way to see whether deep learning can beat the bag of words here.
+What this means for the project: the deep-learning part works as a text reader but is not what makes the ranking good. The honest claim is "comments alone get within a few points of the full history, and add nothing on top of it". Alternative not yet tried: fine-tuning the encoder on these comments, which is the natural way to see whether deep learning can beat the bag of words here.
 
-**PF.2 Fine-tuning the encoder (model M3).** Also at the author's request, to see whether real deep learning on the text beats the frozen encoder and the bag of words. Code in `src/finetune.py`, run by the optional notebook 05.
+**PF.2 Fine-tuning the encoder (model M3).** Tried to see whether fine-tuning on the text beats the frozen encoder and the bag of words. Code in `src/finetune.py`, run by the optional notebook 05.
 
 - Design. The same MiniLM encoder as M2, now trained further with a classification head: input = a routine inspection's earlier comments, target = whether it failed. 128 tokens, 2 epochs, learning rate 5e-5, batch 32, set once and not tuned. Alternative: 256 tokens, three times slower; a quarter to a third of comments are longer than 128 tokens.
 - No look-ahead. A text model trained on 2016 to 2022 and then used to score those same years would hand LightGBM scores that have seen the answers. So text models are trained in time blocks: each is trained on everything before a cutoff (inspections since 2007 count) and scores only what comes after. Four models cover 2016 to 2023, and a fifth, trained on everything before 2024, scores the test years.

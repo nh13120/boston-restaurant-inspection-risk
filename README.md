@@ -19,7 +19,7 @@ cd notebooks && for nb in 01_data 02_baselines 03_models 04_results; do
 done
 ```
 
-About 10 minutes on an M-series laptop including the data pull, plus a 90 MB encoder download. The city still edits the table: a pull two days after ours had 34 more rows and moved each hit rate by less than 0.01 point. For our exact numbers (verified on Apple Silicon), install from `requirements-lock.txt`, get `inspections_snapshot.parquet` from the repo owner and place it in `data/raw/`. Notebook 05 (M3) is optional: about 40 minutes on a GPU.
+About 10 minutes on an M-series laptop including the data pull, plus a 90 MB encoder download. The city still edits the table: a pull two days after ours had 34 more rows and moved each hit rate by less than 0.01 point. For our exact numbers (verified on Apple Silicon), install from `requirements-lock.txt`, get `inspections_snapshot.parquet` from the repository owner and place it in `data/raw/`. Notebook 05 (M3) is optional: about 40 minutes on a GPU.
 
 ## Results on the first 20% of visits, test years 2024 to Nov 2026
 

@@ -294,7 +294,34 @@ FEATURE_LABELS = {
     "neighborhood": "Neighborhood",
     "zip": "Zip code",
     "has_prior_comments": "Previous visit has comments",
+    "location": "Location (zip code + neighborhood)",
 }
+
+
+def permutation_importance(model, df, y, groups, n_repeats=20, k=K, seed=SEED):
+    """How far the hit rate at capacity k falls when one input is scrambled across rows.
+
+    `groups` = {label: [columns]}; the columns of one group are scrambled together (for example
+    zip and neighborhood, which carry the same information). The model is not refitted, so this
+    measures what the fitted model gets from each input on these rows. Returns one row per group,
+    largest fall first, in hit-rate points, with the smallest and largest fall over the repeats.
+    """
+    features = list(model.feature_name_)
+    base = evaluate(y, model.predict_proba(df[features])[:, 1], k)["precision_at_k"]
+    rng = np.random.default_rng(seed)
+    rows = []
+    for label, columns in groups.items():
+        drops = []
+        for _ in range(n_repeats):
+            order = rng.permutation(len(df))
+            scrambled = df.copy()
+            for c in columns:
+                scrambled[c] = df[c].iloc[order].set_axis(df.index)   # keeps the column's type
+            drops.append(base - evaluate(y, model.predict_proba(scrambled[features])[:, 1], k)["precision_at_k"])
+        rows.append({"input": label, "hit_rate_drop_points": 100 * np.mean(drops),
+                     "drop_min_points": 100 * np.min(drops), "drop_max_points": 100 * np.max(drops),
+                     "repeats": n_repeats})
+    return pd.DataFrame(rows).sort_values("hit_rate_drop_points", ascending=False).reset_index(drop=True)
 
 
 def plot_hit_rate_bar(results, title, path=None, k=K, final=None, note=""):
@@ -322,19 +349,22 @@ def plot_hit_rate_bar(results, title, path=None, k=K, final=None, note=""):
     return fig
 
 
-def plot_importance(importance, title, path=None, top=8):
-    """Horizontal bars of the inputs the model uses most. `importance` = models.importance_table output."""
+def plot_importance(importance, title, path=None, top=8, note=""):
+    """Horizontal bars: how far the hit rate falls when each input is scrambled, with the range over
+    the repeats. `importance` = permutation_importance output."""
     set_plot_style()
     imp = importance.head(top).iloc[::-1]
-    labels = [FEATURE_LABELS.get(f, f.replace("text_pc", "Comment text, component ")) for f in imp["feature"]]
-    fig, ax = plt.subplots(figsize=(9, 0.5 * len(imp) + 2.2))
-    ax.barh(labels, imp["share_of_gain"] * 100, color="#4c72b0")
-    for y, value in enumerate(imp["share_of_gain"] * 100):
-        ax.text(value + 0.5, y, f"{value:.0f}%" if value >= 1 else "<1%", va="center", fontsize=12)
-    ax.set_xlabel("Share of the model's use of each input (%)")
+    labels = [FEATURE_LABELS.get(f, f) for f in imp["input"]]
+    drop = imp["hit_rate_drop_points"].to_numpy()
+    err = [drop - imp["drop_min_points"].to_numpy(), imp["drop_max_points"].to_numpy() - drop]
+    fig, ax = plt.subplots(figsize=(9, 0.5 * len(imp) + 2.4))
+    ax.barh(labels, drop, color="#4c72b0", xerr=err, error_kw={"ecolor": "black", "capsize": 4, "lw": 1.2})
+    for y, (value, hi) in enumerate(zip(drop, imp["drop_max_points"])):
+        ax.text(max(hi, value) + 0.15, y, f"{value:.1f}", va="center", fontsize=12)
+    ax.axvline(0, color="black", linewidth=0.8)
+    ax.set_xlabel("Fall in the hit rate when the input is scrambled (percentage points)")
     ax.set_title(title)
-    ax.text(0.0, -0.24, "Inputs the model relies on most. They are signals, not causes.",
-            transform=ax.transAxes, fontsize=11)
+    ax.text(0.0, -0.2, textwrap.fill(note, 100), transform=ax.transAxes, fontsize=11, va="top")
     fig.tight_layout()
     if path:
         fig.savefig(path, bbox_inches="tight")

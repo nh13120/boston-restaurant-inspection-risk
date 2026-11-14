@@ -209,15 +209,35 @@ def first_visit_probability(score, k=K):
     return np.where(above, 1.0, np.where(tied, (n_top - above.sum()) / tied.sum(), 0.0))
 
 
-def neighborhood_table(neighborhood, y, score, other=None, k=K, min_rows=200):
+def scrambled_first_visit_probability(model, df, columns, k=K, n_repeats=20, seed=42):
+    """Chance of being among the first k share of visits when `columns` are scrambled across rows,
+    averaged over n_repeats scrambles. With columns = zip and neighborhood, this is the same model
+    with the effect of location removed and each restaurant's own record kept."""
+    features = list(model.feature_name_)
+    rng = np.random.default_rng(seed)
+    total = np.zeros(len(df))
+    for _ in range(n_repeats):
+        order = rng.permutation(len(df))
+        scrambled = df.copy()
+        for c in columns:
+            scrambled[c] = df[c].iloc[order].set_axis(df.index)   # keeps the column's type
+        total += first_visit_probability(model.predict_proba(scrambled[features])[:, 1], k)
+    return total / n_repeats
+
+
+def neighborhood_table(neighborhood, y, score, other=None, other_probs=None, k=K, min_rows=200):
     """For each neighborhood: its fail rate, and the share of its inspections that land in the
     first k share of visits. `other` = {column label: another score} adds the same share under
-    another ranking, for comparison (for example a rule that does not use location)."""
+    another ranking (for example a rule that does not use location). `other_probs` = {column label:
+    first-visit probabilities} adds a share computed elsewhere (for example with location scrambled)."""
     df = pd.DataFrame({"neighborhood": np.asarray(neighborhood).astype(str), "y": np.asarray(y),
                        "in_first": first_visit_probability(score, k)})
     agg = {"inspections": ("y", "size"), "fail_rate": ("y", "mean"), "share_in_first_visits": ("in_first", "mean")}
     for label, other_score in (other or {}).items():
         df[label] = first_visit_probability(other_score, k)
+        agg[label] = (label, "mean")
+    for label, probs in (other_probs or {}).items():
+        df[label] = np.asarray(probs)
         agg[label] = (label, "mean")
     out = df.groupby("neighborhood").agg(**agg).reset_index()
     hits = (df["y"] * df["in_first"]).groupby(df["neighborhood"]).sum() / df.groupby("neighborhood")["in_first"].sum()
@@ -385,8 +405,8 @@ def plot_impact_bar(impact, best, title, path=None, k=K):
 
 def plot_neighborhoods(neighborhoods, best, title, path=None, k=K):
     """Share of each neighborhood's inspections that land in the first k share of visits, under the
-    model (bars) and under a hand rule that ignores location (black ticks). `neighborhoods` =
-    neighborhood_table output with the column share_in_first_visits_rule_without_location."""
+    model (bars) and under the same model with location scrambled (black ticks). `neighborhoods` =
+    neighborhood_table output with the column share_in_first_visits_location_scrambled."""
     import matplotlib.pyplot as plt
     from src.evaluate import MODEL_COLORS, set_plot_style
 
@@ -395,15 +415,15 @@ def plot_neighborhoods(neighborhoods, best, title, path=None, k=K):
     labels = [f"{n} (fails {f:.0%})" for n, f in zip(nb["neighborhood"], nb["fail_rate"])]
     fig, ax = plt.subplots(figsize=(9.5, 0.42 * len(nb) + 2.4))
     ax.barh(labels, nb["share_in_first_visits"] * 100, color=MODEL_COLORS[best], label="LightGBM model (uses location)")
-    ax.scatter(nb["share_in_first_visits_rule_without_location"] * 100, labels, marker="|", s=260, linewidths=2.5,
-               color="black", zorder=3, label="Hand rule without location")
+    ax.scatter(nb["share_in_first_visits_location_scrambled"] * 100, labels, marker="|", s=260, linewidths=2.5,
+               color="black", zorder=3, label="Same model, location scrambled")
     ax.axvline(k * 100, color="#9a9a9a", linestyle="--", linewidth=1.2)
     ax.text(k * 100 + 0.5, len(nb) - 0.4, f"{k:.0%} = even share", fontsize=11, color="#555555")
     ax.set_xlabel(f"Share of the neighborhood's inspections in the first {k:.0%} of visits (%)")
     ax.set_title(title)
     ax.legend(loc="lower right", frameon=False)
-    ax.text(0.0, -0.16, "Test period, 2024 to 2026, neighborhoods with at least 200 inspections. Zip code and neighborhood\n"
-                        "are model inputs; the hand rule (most violations at the last routine inspection) does not use them.",
+    ax.text(0.0, -0.16, "Test period, 2024 to 2026, neighborhoods with at least 200 inspections. Ticks: the same model with zip\n"
+                        "code and neighborhood scrambled across inspections (average of 20), so only each restaurant's record counts.",
             transform=ax.transAxes, fontsize=11, va="top")
     fig.tight_layout()
     if path:

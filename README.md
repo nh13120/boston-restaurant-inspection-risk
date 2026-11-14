@@ -38,7 +38,7 @@ Intervals are bootstraps over whole restaurants. The yearly total (about 3,544 f
 
 - We could not confirm how ISD orders visits today: "random order" is our assumption, and 20% is an illustrative capacity. Hit rates fell from 90.1% in 2024 to 84.9% in 2026.
 - M1 was fixed as the final model on validation, where text added nothing. On test it leads logistic regression by 1.1 points (CI 0.3 to 1.9), and M3, added later with its own freeze, leads M1 by 1.0 (CI 0.3 to 1.8).
-- Zip code and neighborhood are inputs: Dorchester gets 46% of its inspections among the first visits and Roxbury 19%, at the same fail rate. Dropping them cost 0.5 points on 2023, within noise, and we suggest ISD does so.
+- Zip code and neighborhood are inputs. They add little to the ranking (scrambling them on the test years lowers the hit rate by 0.2 points) but move early visits between neighborhoods: at the same 66% fail rate, Dorchester gets 46% of its inspections among the first visits and Roxbury 19%, against 35% and 25% with location scrambled. We suggest ISD drops them.
 - Scores are estimates, not findings about a business: read `results/priority_list_note.md` before using `results/priority_list.csv`.
 
 ## Repo map

@@ -18,7 +18,7 @@ What the inspector comments add on top of the inspection history: about one poin
 
 ![What inspector comments add](results/figures/text_value_bar.png)
 
-A policy question for the city. Zip code is a model input, so neighborhoods with the same fail rate get very different shares of the early visits (Dorchester 46%, Roxbury 19%).
+A policy question for the city. Neighborhoods with the same fail rate get very different shares of the early visits: Dorchester 46%, Roxbury 19%. Part of the gap comes from zip code, which is a model input. With location scrambled it narrows to 35% and 25%, and the model finds almost as many failures (the hit rate falls by 0.2 points).
 
 ![Share of first visits by neighborhood](results/figures/neighborhood_first_visits.png)
 

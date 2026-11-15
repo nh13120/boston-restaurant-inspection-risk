@@ -15,7 +15,7 @@ K = 0.20   # the metrics count the riskiest 20% of visits (an illustrative capac
 
 # One display name and one colour per model, shared by every figure.
 MODEL_LABELS = {
-    "B0_random": "Random order (assumed status quo)",
+    "B0_random": "No ranking (reference point)",
     "B1_past_fail_rate": "Past failure rate (simple rule)",
     "B2_logreg": "Logistic regression",
     "M1_lgbm": "LightGBM, history",
@@ -23,7 +23,7 @@ MODEL_LABELS = {
 }
 # Names for slides: the method, then what it reads. "\n" keeps bar labels narrow.
 FIGURE_LABELS = {
-    "B0_random": "Random order\n(assumed status quo)",
+    "B0_random": "No ranking\n(reference point)",
     "B1_past_fail_rate": "Simple rule:\npast failure rate",
     "B2_logreg": "Logistic regression:\nhistory only",
     "M1_lgbm": "LightGBM:\nhistory only",
@@ -211,7 +211,7 @@ def plot_gains(y, scores, title, path=None, k=K, highlight=None):
                 linestyle=":", linewidth=1.5, label="Best possible (hindsight)")
         caught = evaluate(y, scores[highlight], k)["catch_at_k"] * 100
         best = evaluate(y_arr, y_arr.astype(float), k)["catch_at_k"] * 100
-        ax.annotate(f"First {k:.0%} of visits:\n{caught:.0f}% of failures found\n({k:.0%} in random order,\n{best:.0f}% at best)",
+        ax.annotate(f"First {k:.0%} of visits:\n{caught:.0f}% of failures found\n({k:.0%} with no ranking,\n{best:.0f}% at best)",
                     xy=(k * 100, caught), xytext=(k * 100 + 18, caught - 25), fontsize=13, fontweight="bold",
                     color=MODEL_COLORS.get(highlight), arrowprops=dict(arrowstyle="->", color=MODEL_COLORS.get(highlight)))
     else:

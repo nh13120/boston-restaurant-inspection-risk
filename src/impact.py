@@ -112,7 +112,8 @@ def impact_table(y, dates, scores, best, k=K, diff_ci=None):
          "fail rate x inspections per year; visiting in a different order does not change this total"),
         (f"Visits per year in the first {k:.0%}", visits, f"{k:.0%} x inspections per year"),
         (f"Failed inspections found per year {first}, random order", found_random,
-         "fail rate x visits (average over all random orders; ASSUMES today's schedule is no better than random)"),
+         "fail rate x visits (average over all random orders). A reference point with no ranking, not the city's current "
+         "practice: Boston already inspects lower-graded restaurants more often"),
         (f"Failed inspections found per year {first}, past-failure-rate rule (B1)", found["B1_past_fail_rate"],
          "B1 test hit rate x visits"),
         (f"Failed inspections found per year {first}, {best}", found[best], f"{best} test hit rate x visits"),
@@ -389,8 +390,8 @@ def plot_impact_bar(impact, best, title, path=None, k=K):
     b_lo, b_hi = ci.loc[extra + "the rule (B1)"]
     extra_random = rows[2][1] - rows[0][1]
     extra_rule = rows[2][1] - rows[1][1]
-    ax.text(0.02, 0.97, f"{extra_random:,.0f} more than random order (95% range {r_lo:,.0f} to {r_hi:,.0f}),\n"
-                        f"{extra_rule:,.0f} more than the simple rule ({b_lo:,.0f} to {b_hi:,.0f})",
+    ax.text(0.02, 0.97, f"{extra_rule:,.0f} more than the simple rule (95% range {b_lo:,.0f} to {b_hi:,.0f}),\n"
+                        f"{extra_random:,.0f} more than with no ranking ({r_lo:,.0f} to {r_hi:,.0f})",
             transform=ax.transAxes, va="top", fontsize=13, color=MODEL_COLORS[best], fontweight="bold")
     ax.set_ylabel(f"Failed inspections found per year\nin the first {k:.0%} of visits")
     ax.set_ylim(0, max(r[1] for r in rows) * 1.32)

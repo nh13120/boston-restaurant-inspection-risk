@@ -23,20 +23,21 @@ About 10 minutes on an M-series laptop, with internet access. [docs/setup.md](do
 
 | Method | Visits that find a failure (precision@20%, 95% CI) | Share of serious violations found† |
 |---|---|---|
-| B0 Random order (assumed) | 59.0% (58 to 60) | 20% |
+| B0 No ranking (reference point) | 59.0% (58 to 60) | 20% |
 | B1 Past failure rate (simple rule) | 80.3% (78 to 82) | 33% |
 | B2 Logistic regression | 87.0% (85 to 88) | 39% |
 | M1 LightGBM (final model) | 88.1% (86 to 89) | 40% |
 | M2 M1 + comment embeddings | 88.8% (87 to 90) | 40% |
 | M3 M1 + fine-tuned text encoder† | 89.1% (88 to 90) | 40% |
 
-Intervals are bootstraps over restaurants. Paired differences: M1 leads B1 by 7.8 points (6.5 to 9.1) and B2 by 1.1 (0.3 to 1.9), and M3 leads M1 by 1.0 (0.3 to 1.8). The yearly total (about 3,544 failed inspections) is the same in any order: ranking changes when they are found. In the first 20% of visits (1,201 a year), M1 finds 349 more of them than a random order (CI 333 to 364) and 42† to 94 more than a simple rule.
+Intervals are bootstraps over restaurants. Paired differences: M1 leads B1 by 7.8 points (6.5 to 9.1) and B2 by 1.1 (0.3 to 1.9), and M3 leads M1 by 1.0 (0.3 to 1.8). The yearly total (about 3,544 failed inspections) is the same in any order: ranking changes when they are found. In the first 20% of visits (1,201 a year), M1 finds 42† to 94 more of them than a simple rule, the closer comparison to current practice, and 349 more than with no ranking (CI 333 to 364).
 
 † Added after the first test scoring: extra reporting on the frozen predictions, or, for M3, a model built afterwards with its own freeze.
 
 ## Limitations
 
-- "Random order" is an assumption, and the test measures ranking quality on past visits, not a simulated schedule.
+- ISD does not visit at random: it inspects lower-graded restaurants more often ([schedule](https://www.boston.gov/departments/inspectional-services/how-we-grade-restaurants-and-food-trucks)). "No ranking" is a reference point for what ordering adds, and the simple rule is the closer comparison to today.
+- The test measures ranking quality on past visits, some of them triggered by complaints, not a simulated schedule.
 - The final model omits comments: they added nothing measurable on 2023, and about one point on the test years, seen after the freeze. M3 is the choice for a team that wants that point and accepts a neural network.
 - Location is an input the model barely relies on (scrambling it costs 0.2 points†), but it shifts early visits between neighborhoods. We suggest dropping it. A refit without it was checked on 2023 only.
 - Scores are estimates, not findings about a business.

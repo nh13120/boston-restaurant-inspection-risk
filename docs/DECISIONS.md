@@ -12,10 +12,10 @@ Entries are in the order the work was done, and each describes the repository as
 - Unit: one license on one calendar day. Re-inspections within 30 days of a failure are dropped after the history features are built (D1.3, D2.3).
 - No leakage: every history feature uses only earlier inspections, and fields that describe the license today are kept out or documented (D2.2, G1.5).
 - Split by time: 2016 to 2022, 2023, then 2024 onward. Final fits use 2016 to 2023 (D1.5, G2.7).
-- Benchmarks: random order as an exact average, a fair past-failure-rate rule, a second rule as a sensitivity check, and logistic regression (G2.1, G2.2, G2.8).
+- Benchmarks: no ranking (the exact average over random orders) as a reference point, a fair past-failure-rate rule, a second rule as a sensitivity check, and logistic regression (G2.1, G2.2, G2.8).
 - The final model was fixed on validation before the test: M1 unless M2 beat it beyond noise (G2.3, F.1).
 - Uncertainty: bootstraps over whole restaurants, and three verdicts for a difference (G2.6, G2.9).
-- Impact: earlier discovery, not more discoveries, against a random order that is an assumption (G3.1, G3.2).
+- Impact: earlier discovery, not more discoveries. "No ranking" is a reference point, not the city's practice, and the simple rules are the closer comparison (G3.1, G3.2, PF.5).
 - Text: nothing on validation, about a point on the test years. The fine-tuned model was added after the freeze (D5.3, PF.1, PF.2).
 - Location: an input the model barely relies on, but one that shifts early visits between neighborhoods (G4.3, PF.3).
 
@@ -167,7 +167,7 @@ No third proposal was made, and there is no second round, because more rounds wo
 
 **G3.1 The gain is earlier discovery, not more discoveries.** ISD makes every routine inspection sooner or later, so the yearly total of failed inspections (about 3,544) is the same in any visit order. The 349 is the extra failed inspections found within the first 20% of visits. Figure titles, `impact.csv` row names and the README now say "in the first 20% of visits" and state the unchanged total. Alternative considered: drop the yearly counts and report only weeks gained, but the brief asks for failures found per year at 20% capacity.
 
-**G3.2 Random order is an assumed status quo.** B0 is labelled "Random order (assumed status quo)" everywhere. As a rough check, the visits ISD actually made first in each quarter failed 61.5% of the time, against 59.0% overall. Measured against that order, M1 ranked within quarters finds about 324 more failed inspections in the first 20%, not 349. Both numbers are in `impact.csv`. Seasonality inside a quarter could also explain the 61.5%, so we report it as a sensitivity and keep random order as the baseline the brief defines.
+**G3.2 Random order is an assumed status quo (reworded later, see PF.5).** B0 is labelled "Random order (assumed status quo)" everywhere. As a rough check, the visits ISD actually made first in each quarter failed 61.5% of the time, against 59.0% overall. Measured against that order, M1 ranked within quarters finds about 324 more failed inspections in the first 20%, not 349. Both numbers are in `impact.csv`. Seasonality inside a quarter could also explain the 61.5%, so we report it as a sensitivity and keep random order as the baseline the brief defines.
 
 **G3.3 Uncertainty and ranges for the impact numbers.** `impact.csv` carries the bootstrap interval of the two headline gains (349: 333 to 364; 94: 79 to 109). The gain over "a simple rule" is quoted as 42 to 94 failed inspections a year: 94 against B1, about 74 against the last-routine-violations rule, about 42 against B1 without late follow-ups. The time gain (1.1 weeks within quarters) is reported with its mirror image (visits that end in a pass move 1.6 weeks later) and its dependence on the window (0.4 weeks within months, 4.4 within years).
 
@@ -206,7 +206,7 @@ No third proposal was made, and there is no second round, because more rounds wo
 
 Left as is, for the team to decide:
 
-- How ISD orders visits today is still an assumption. A sourced description of ISD's scheduling would strengthen the problem statement and the impact case more than any analysis here.
+- How ISD orders visits within a period is still unknown. Its published schedule covers only how often each restaurant is visited (PF.5). ISD's own records would strengthen the problem statement and the impact case more than any analysis here.
 - The text model is a frozen encoder on the previous visit's comments. A variant on the last routine inspection's comments, with a bag-of-words comparison, would give the deep-learning part a fairer chance. It needs new models.
 - The model without location was not scored on the test years, because the settings were frozen before the test. Scoring it now and labelling it as after the fact is an option.
 - Timing, severity and after-a-pass numbers have no intervals (the after-a-pass group is 299 inspections).
@@ -245,3 +245,9 @@ The same method explains the neighborhood figure. With location scrambled, the s
 - Paired intervals on the robustness slices and in the text ablation use 2,000 resamples. The frozen 10,000 applies to the headline comparisons. The difference is in the fourth decimal.
 
 No model, setting or results table changed.
+
+**PF.5 The benchmark is a reference point, not the city's practice (wording).** The city publishes how often it inspects: every restaurant at least once a year, and by grade, A yearly, B every six months and C every three months, with a re-inspection within 30 days when the grade is not an A ([How we grade restaurants and food trucks](https://www.boston.gov/departments/inspectional-services/how-we-grade-restaurants-and-food-trucks), [Food Service Permit](https://www.boston.gov/departments/inspectional-services/how-get-food-service-permit)). Boston does not inspect in a random order, so labelling B0 an "assumed status quo" was wrong. B0 is now called "No ranking (reference point)" in the figures, the README and the notebooks. It measures what ordering adds among the visits that are made.
+
+The simple rules (B1 and the second rule) are the closer comparison to current practice, and the gain is now stated against them first: 42 to 94 failed inspections found early each year, against 349 with no ranking. Two things support reading B0 as a reference within a period. The city's rule sets how often a restaurant is visited, not which visit comes first. And the visits ISD made first in each quarter failed 61.5% of the time, against 59.0% overall.
+
+Two limits are now stated in `START_HERE.md`. Visits triggered by complaints or illness reports cannot be told apart in the data and are counted as routine. They probably fail more often and cannot be rescheduled, which inflates the 59% and the gains by an unknown amount. And the intervals resample whole restaurants, so they ignore any clustering by inspector or district and may be too narrow. No number changed.

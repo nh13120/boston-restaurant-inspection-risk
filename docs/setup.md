@@ -11,7 +11,7 @@ pip install -r requirements-lock.txt      # every package pinned, not only the d
 mkdir -p data/raw                         # place inspections_snapshot.parquet here
 ```
 
-The snapshot is not in the repo, because raw inspector comments contain names and emails. Keep `data/` unpublished. To get the file, open an issue on the GitHub repository. With it in place, notebooks 01 to 04 regenerate every file in `results/` and `preds/` byte for byte, except the M3 files, which come from the optional notebook 05.
+The snapshot is not in the repo, because raw inspector comments contain names and emails. Keep `data/` unpublished. To get the file, open an issue on the GitHub repository. With it in place, notebooks 01 to 04 regenerate every file in `results/` and `preds/` byte for byte, except the M3 files, which come from the optional notebook 05, and the comparison files, which come from the optional notebook 06.
 
 After a run, `git status` lists the four notebooks as modified, because executing them in place updates their saved outputs and timestamps. Run `git status results preds` to check the outputs: it should print nothing.
 
@@ -21,6 +21,7 @@ Two warnings are harmless: "Kernel is running over TCP without encryption" from 
 
 - Verified on Apple Silicon (macOS) only. Linux and Windows are untested, and the README's commands assume a POSIX shell.
 - M1, the final model, is deterministic. M2 uses text embeddings, which differ in the sixth decimal between devices. That can move M2's hit rate by about 0.3 points.
+- Notebook 06 (ridge and LASSO logistic regression, random forest, XGBoost) runs on the CPU in about 8 minutes. A second run on our machine gave identical files.
 - Notebook 05 fine-tunes on an Apple GPU (MPS) when one is available, which takes about 40 minutes, and on the CPU otherwise, which is much slower. CUDA is not wired in. A GPU run is not guaranteed to give identical numbers twice.
 
 ## macOS: LightGBM and OpenMP
@@ -41,3 +42,12 @@ install_name_tool -add_rpath "@loader_path/../../sklearn/.dylibs" "$LIB" && code
 ```
 
 Check with `python -c "import lightgbm"`. Reinstalling LightGBM undoes option 2.
+
+XGBoost, which only notebook 06 imports, fails the same way. Option 1 fixes both libraries. With option 2, repeat the step for XGBoost:
+
+```bash
+LIB=$(python -c "import importlib.util as u, pathlib as p; print(p.Path(u.find_spec('xgboost').origin).parent/'lib/libxgboost.dylib')")
+install_name_tool -add_rpath "@loader_path/../../sklearn/.dylibs" "$LIB" && codesign --force --sign - "$LIB"
+```
+
+Check with `python -c "import xgboost"`.

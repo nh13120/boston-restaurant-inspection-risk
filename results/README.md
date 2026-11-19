@@ -1,8 +1,8 @@
 # What is in this folder
 
-Notebooks 01 to 04 write every other file here except the M3 files (`finetune_*` and `m3_selected_settings.json`), which come from the optional notebook 05.
+Notebooks 01 to 04 write every other file here except the M3 files (`finetune_*` and `m3_selected_settings.json`), which come from the optional notebook 05, and the `comparison_*` files, which come from the optional notebook 06.
 
-Files ending in `_val`, or starting with `validation_`, come from the validation year (2023), which was used to choose settings. So do `selected_settings.json`, `m3_selected_settings.json` and `text_examples.md`. The other tables come from the test years (2024 to November 2026). The headline tables were scored once, after the settings were frozen. Files marked † were added after the first test scoring: extra reporting on those same frozen predictions, or, for the M3 files, a model built afterwards with its own freeze. `priority_list.csv` is different again: it scores each restaurant's next inspection with a model refitted on all the data.
+Files ending in `_val`, or starting with `validation_`, come from the validation year (2023), which was used to choose settings. So do `selected_settings.json`, `m3_selected_settings.json`, `comparison_selected_settings.json` and `text_examples.md`. The other tables come from the test years (2024 to November 2026). The headline tables were scored once, after the settings were frozen. Files marked † were added after the first test scoring: extra reporting on those same frozen predictions, or, for the M3 and comparison files, models built afterwards with their own freeze. `priority_list.csv` is different again: it scores each restaurant's next inspection with a model refitted on all the data.
 
 In the tables, `precision_at_k` is the hit rate: the share of the first 20% of visits that find a failure. `catch_at_k` is the share of all failures those visits find. Columns ending in `_lo` and `_hi` are the ends of a 95% interval.
 
@@ -49,6 +49,18 @@ In the tables, `precision_at_k` is the hit rate: the share of the first 20% of v
 | `finetune_like_for_like_val.csv` | Two choices of which comments to feed the text model | 05 |
 | `selected_settings.json` | The settings chosen on 2023. Identical to the frozen copy in `docs/FROZEN_CONFIG.json` | 03 |
 | `m3_selected_settings.json` | The same for M3. Identical to `docs/FROZEN_CONFIG_M3.json` | 05 |
+
+## Wider model comparison
+
+Four more classification models on the same 17 inputs, splits and metrics: ridge and LASSO logistic regression, random forest and XGBoost. `docs/DECISIONS.md` (PF.6) gives the reasoning and the reading of the results.
+
+| File | What it holds | Notebook |
+|---|---|---|
+| `comparison_test.csv` † | The four existing models (B0, B1, B2, M1) and the four added ones on the test years: settings, metrics with intervals, the 2023 hit rate, and the difference from LightGBM | 06 |
+| `comparison_differences.csv` † | Each added model minus LightGBM and minus logistic regression, on 2023 and on the test years | 06 |
+| `comparison_val.csv` | The same eight models on 2023 | 06 |
+| `comparison_grid_val.csv` | Every setting tried for the four added models, 36 in all. An empty `max_depth` means no limit | 06 |
+| `comparison_selected_settings.json` | The settings chosen on 2023. Identical to the frozen copy in `docs/FROZEN_CONFIG_COMPARISON.json` | 06 |
 
 ## Figures
 

@@ -90,7 +90,8 @@ def grid_search(name, train, val):
             row["best_iteration"] = model.best_iteration + 1
         rows.append(row)
     table = pd.DataFrame(rows)       # an empty max_depth cell means "no limit"
-    best = table.sort_values(["precision_at_k", "auc"], ascending=False, kind="stable").index[0]
+    best = (table.assign(listed=range(len(table)))
+            .sort_values(["precision_at_k", "auc", "listed"], ascending=[False, False, True]).index[0])
     best_params = dict(settings[best])
     if name == "C4_xgboost":
         best_params["n_estimators"] = int(table.loc[best, "best_iteration"])

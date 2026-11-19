@@ -1,6 +1,6 @@
 # Results at a glance
 
-A visual summary for readers who want the findings before the code. The [README](README.md) covers the method, the full results table and the steps to reproduce them.
+A visual summary for readers who want the findings before the code. The [README](README.md) covers the method, the main results table and the steps to reproduce them.
 
 The project ranks Boston's routine restaurant inspections by how likely each one is to fail, so the city can visit the riskiest places first.
 

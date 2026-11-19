@@ -23,7 +23,7 @@ In the tables, `precision_at_k` is the hit rate: the share of the first 20% of v
 
 | File | What it holds | Notebook |
 |---|---|---|
-| `impact.csv` | Every impact number quoted in the README and START_HERE, with a line on how it was computed. The severity, timing, second-rule, actual-order and late-follow-up rows were added later † | 04 |
+| `impact.csv` | Every impact number quoted in the README and START_HERE, with a line on how it was computed. The severity, rule-timing, second-rule, actual-order and late-follow-up rows were added later † | 04 |
 | `capacity_sensitivity.csv` † | Hit rates when the first 5%, 10%, 30% or 50% of visits are counted, not 20% | 04 |
 | `calibration.csv` † | Predicted risk against the observed fail rate, in ten groups | 04 |
 | `after_a_pass.csv` † | What happens next to restaurants that passed but ranked as risky | 04 |

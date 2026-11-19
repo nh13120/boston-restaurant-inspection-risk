@@ -31,7 +31,7 @@ cd notebooks && jupyter nbconvert --to notebook --execute --inplace 0[1-4]_*.ipy
 
 † Added after the first test scoring: settings fixed beforehand, or reporting on the frozen predictions. All models: `results/readme_table.csv`.
 
-- M1 leads the past-failure rule by 7.8 points (6.5 to 9.1), or 3.7† without late follow-ups, and by 94% to 73%† in the first 5% of visits. In the first 20% it finds 42† to 94 more failed inspections a year than a rule. Failures are found 1.1 weeks† sooner than in ISD's actual order (rules: 0.8 to 0.9), and the yearly total is unchanged.
+- M1 leads the past-failure rule by 7.8 points (6.5 to 9.1), or 3.7† without late follow-ups, and by 94% to 73%† in the first 5% of visits. In the first 20% it finds 42† to 94 more failed inspections a year than a rule. Failures are found 1.1 weeks sooner than in ISD's actual order (rules: 0.8 to 0.9†), and the yearly total is unchanged.
 - Comments alone reach 84%†. On top of the history they add one point (M3: 1.0, 0.3 to 1.8), which needs a neural network that reads them.
 - Why M1: it was fixed before the test, and no algorithm on the same inputs beats its hit rate beyond noise. LASSO†, with four dominant weights, ties M1 at 20% but trails by 2 points in the first 10%.
 - Deploy M1 without location: within noise of M1 (+0.6 points), and Dorchester and Roxbury, which fail equally often, get 35% and 24% of their inspections in the first visits†, against 46% and 19%.

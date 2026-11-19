@@ -5,7 +5,7 @@ For data scientists and ML engineers at Boston's Inspectional Services Departmen
 ## How it works
 
 1. Data (`src/data_pull.py`, `src/features.py`): Analyze Boston's [Food Establishment Inspections](https://data.boston.gov/dataset/food-establishment-inspections) (PDDL), pulled 2026-11-11, no owner names. One row per routine inspection, label 1 = any fail code, 17 inputs ([data dictionary](docs/data_dictionary.md)): earlier inspections, the month, and type and location as of the pull.
-2. Tabular models (`src/models.py`, `src/compare.py`): two rules, logistic regression, LightGBM (M1), four others.
+2. Tabular models (`src/models.py`, `src/compare.py`): 2 rules, logistic regression, LightGBM (M1), 4 more.
 3. Deep learning on text (`src/text.py`, `src/finetune.py`): earlier inspector comments through a MiniLM encoder, frozen (M2) or fine-tuned (M3), added to M1's inputs.
 4. Evaluation (`src/evaluate.py`): train 2016 to 2022, tune on 2023, test on 2024 to Nov 2026, settings frozen before the test (`docs/FROZEN_CONFIG*.json`).
 
@@ -39,3 +39,5 @@ cd notebooks && jupyter nbconvert --to notebook --execute --inplace 0[1-4]_*.ipy
 ## Limitations
 
 ISD already inspects lower-graded restaurants more often ([schedule](https://www.boston.gov/departments/inspectional-services/how-we-grade-restaurants-and-food-trucks)), so the rules are the comparison to today. The test ranks past visits, not a simulated schedule. The hit rate fell from 90.1% (2024) to 84.9% (2026): refit yearly. Scores are estimates, not findings.
+
+Nicolas Hong, Louis Neubauer, Robin Cen, Jose Plaza Carreras. MIT 15.071 Project 1, Fall 2026. [MIT license](LICENSE).

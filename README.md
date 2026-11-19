@@ -9,11 +9,10 @@ For data scientists and ML engineers at Boston's Inspectional Services Departmen
 3. Deep learning on text (`src/text.py`, `src/finetune.py`): earlier inspector comments through a MiniLM encoder, frozen (M2) or fine-tuned (M3), added to M1's inputs.
 4. Evaluation (`src/evaluate.py`): train 2016 to 2022, tune on 2023, test on 2024 to Nov 2026, settings frozen before the test (`docs/FROZEN_CONFIG*.json`).
 
-## Reproduce ([setup, notebooks 05 and 06, run order](docs/setup.md))
+## Reproduce ([macOS setup, notebooks 05 and 06, run order](docs/setup.md))
 
 ```bash
-python3.13 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt     # macOS: see docs/setup.md for OpenMP
+python3.13 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
 cd notebooks && jupyter nbconvert --to notebook --execute --inplace 0[1-4]_*.ipynb   # about 10 minutes
 ```
 
@@ -25,6 +24,7 @@ cd notebooks && jupyter nbconvert --to notebook --execute --inplace 0[1-4]_*.ipy
 | Rule: past failure rate | 80.3% (78 to 82) | 33% |
 | Rule: violations at the last routine visit | 81.9% (80 to 83) | 39% |
 | Logistic regression | 87.0% (85 to 88) | 39% |
+| Ridge, LASSO, random forest, XGBoost † | 86.9% to 88.3% | 39% to 40% |
 | **M1: LightGBM, history (final model)** | **88.1% (86 to 89)** | **40%** |
 | M1 without location † | 88.7% (87 to 90) | 40% |
 | M3: M1 + fine-tuned comments † | 89.1% (88 to 90) | 40% |

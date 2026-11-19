@@ -29,15 +29,17 @@ cd notebooks && jupyter nbconvert --to notebook --execute --inplace 0[1-4]_*.ipy
 | M1 without location † | 88.7% (87 to 90) | 40% |
 | M3: M1 + fine-tuned comments † | 89.1% (88 to 90) | 40% |
 
-† Added after the first test scoring: settings fixed beforehand, or reporting on the frozen predictions. All models: `results/readme_table.csv`.
+† Added after the first test scoring; nothing was tuned on the test years. All models: `results/readme_table.csv`.
 
-- M1 leads the past-failure rule by 7.8 points (6.5 to 9.1), or 3.7† without late follow-ups, and by 94% to 73%† in the first 5% of visits. In the first 20% it finds 42† to 94 more failed inspections a year than a rule. Failures are found 1.1 weeks sooner than in ISD's actual order (rules: 0.8 to 0.9†), and the yearly total is unchanged.
-- Comments alone reach 84%†. On top of the history they add one point (M3: 1.0, 0.3 to 1.8), which needs a neural network that reads them.
+- M1 leads the past-failure rule by 7.8 points (6.5 to 9.1), or 3.7† without late follow-ups, and by 94% to 73%† in the first 5% of visits.
+- Comments alone reach 84%† and add one point to M1 (M3: 1.0, 0.3 to 1.8), at the cost of a neural network.
 - Why M1: it was fixed before the test, and no algorithm on the same inputs beats its hit rate beyond noise. LASSO†, with four dominant weights, ties M1 at 20% but trails by 2 points in the first 10%.
 - Deploy M1 without location: within noise of M1 (+0.6 points), and Dorchester and Roxbury, which fail equally often, get 35% and 24% of their inspections in the first visits†, against 46% and 19%.
 
-## Limitations
+## Impact and limits
 
-ISD already inspects lower-graded restaurants more often ([schedule](https://www.boston.gov/departments/inspectional-services/how-we-grade-restaurants-and-food-trucks)), so the rules are the comparison to today. The test ranks past visits, not a simulated schedule. The hit rate fell from 90.1% (2024) to 84.9% (2026): refit yearly. Scores are estimates, not findings.
+With the same inspectors and yearly total, ordering visits by M1 finds 42† to 94 more failed inspections a year in the first 20% of visits than a simple rule, and matches the past-failure rule's count with 10% fewer visits (116 a year). Against the order ISD actually used, it finds 324† more, and failures surface 1.1 weeks sooner (rules: 0.8 to 0.9†).
+
+Limits: a rule is the stricter benchmark, because ISD already [visits lower-graded restaurants more often](https://www.boston.gov/departments/inspectional-services/how-we-grade-restaurants-and-food-trucks). The test reorders past visits, so run a pilot first. Refit yearly: the hit rate fell from 90.1% (2024) to 84.9% (2026).
 
 Nicolas Hong, Louis Neubauer, Robin Cen, Jose Plaza Carreras. MIT 15.071 Project 1, Fall 2026. [MIT license](LICENSE).

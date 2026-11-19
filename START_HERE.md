@@ -28,7 +28,7 @@ A policy question for the city. Dorchester and Roxbury both fail 66% of the time
 
 ![Chance of an early visit by neighborhood](results/figures/neighborhood_first_visits.png)
 
-The other charts are in [results/figures](results/figures). One of them shows why earlier matters: the first 20% of visits hold 40% of all serious violations under the model, against 33% to 39% with a simple rule and 20% with no ranking.
+The other charts are in [results/figures](results/figures). One of them shows why earlier matters: the first 20% of visits hold 40% of all serious violations under the model, against 33% to 39% with a simple rule and 20% with no ranking. The visits ISD actually made first in each quarter found 21%.
 
 Everything on this page except the first two charts, the 349, the lead over logistic regression and the year-by-year hit rates was added after the test years were first scored. It reports on the same frozen predictions and changed no setting. The fine-tuned comment model, the four extra algorithms and the model without location are later models, each scored once with settings frozen beforehand.
 

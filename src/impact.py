@@ -158,6 +158,19 @@ def severity_in_first_visits(n_serious, score, k=K):
     return counts.sum() / n_serious.sum(), any_serious.mean()
 
 
+def severity_by_window(dates, n_serious, score=None, k=K, window="Q"):
+    """Share of all serious violations found by the first k share of each window's visits.
+
+    With `score=None` the first visits are the ones ISD actually made first (by date), as in
+    first_visits_hit_rate: a rough picture of today's order.
+    """
+    df = pd.DataFrame({"date": pd.to_datetime(pd.Series(dates)).to_numpy(), "n": np.asarray(n_serious, dtype=float)})
+    df["rank_score"] = -df["date"].astype("int64").astype(float) if score is None else np.asarray(score, dtype=float)
+    found = sum(severity_in_first_visits(w["n"].to_numpy(), w["rank_score"].to_numpy(), k)[0] * w["n"].sum()
+                for _, w in df.groupby(df["date"].dt.to_period(window)))
+    return found / df["n"].sum()
+
+
 def plot_share_bar(shares, best, title, ylabel, footnote, path=None):
     """Three bars (random order, the rule, the model) for a share between 0 and 1."""
 

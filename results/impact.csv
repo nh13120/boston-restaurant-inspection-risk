@@ -29,3 +29,4 @@ Extra failed inspections found per year in the first 20% of visits vs. the last-
 "Share of the first 20% of visits that find at least one serious violation, M2_lgbm_text",0.4440885264997088,,,test inspections in the first 20% with one or more level 3 violations
 "Share of all serious (level 3) violations found in the first 20% of visits, last-routine-violations rule (S1)",0.38958605432521404,,,"level 3 violations found by the first 20% of test visits / all 5,827 found in the test period"
 "Share of the first 20% of visits that find at least one serious violation, last-routine-violations rule (S1)",0.4203308834352217,,,test inspections in the first 20% with one or more level 3 violations
+"Share of all serious (level 3) violations found in the first 20% of visits, ISD's actual order",0.20905022928570668,,,"the visits ISD actually made first (first 20% of each quarter, by date); a rough picture of today's order"

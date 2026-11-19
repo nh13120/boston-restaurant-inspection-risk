@@ -30,7 +30,7 @@ A policy question for the city. Dorchester and Roxbury both fail 66% of the time
 
 The other charts are in [results/figures](results/figures). One of them shows why earlier matters: the first 20% of visits hold 40% of all serious violations under the model, against 33% to 39% with a simple rule and 20% with no ranking.
 
-Everything on this page except the first two charts and the 349 was added after the test years were first scored. It reports on the same frozen predictions and changed no setting. The fine-tuned comment model is a later model with its own freeze.
+Everything on this page except the first two charts and the 349 was added after the test years were first scored. It reports on the same frozen predictions and changed no setting. The fine-tuned comment model and the four extra algorithms named in the limits are later models with their own freeze.
 
 ## Limits
 
@@ -39,7 +39,7 @@ Everything on this page except the first two charts and the 349 was added after 
 - Some visits are triggered by complaints or illness reports, not scheduled. The data does not say which, so they are counted as routine. They probably fail more often and cannot be rescheduled, which inflates the 59% and the gains by an unknown amount.
 - The results rank past visits using what was known on each visit date, including when ISD chose to visit. They measure how good the ranking is. They are not a simulation of a new schedule.
 - 20% is an illustrative capacity, and the hit rate fell from 90.1% in 2024 to 84.9% in 2026, so the model would need refitting each year.
-- The choice of algorithm adds little: the model leads logistic regression by 1.1 points (95% range 0.3 to 1.9). Most of the gain comes from the inspection history.
+- The choice of algorithm adds little: the model leads logistic regression by 1.1 points (95% range 0.3 to 1.9). Four more algorithms given the same inputs (ridge and LASSO logistic regression, random forest, XGBoost) find a failure in 86.9% to 88.3% of the first visits, against the model's 88.1%. Most of the gain comes from the inspection history.
 - One input reads backwards. "Previous visit failed" marks a late follow-up, a visit more than 30 days after a failure. Those usually pass, so the model ranks them lower. Without them, the model's lead over the simple rule falls from 7.8 points to 3.7. Counting each restaurant once, it is 3.3 points (95% range 1.1 to 5.6).
 - The 95% ranges resample whole restaurants. They do not account for inspectors covering the same district, so they may be too narrow.
 - Scores are estimates, not findings about any business.
@@ -51,10 +51,11 @@ Everything on this page except the first two charts and the 349 was added after 
 | [README.md](README.md) | One-page technical summary: method, results, limitations | Understand or reproduce the method |
 | [results/figures](results/figures) | All 10 charts as PNG images | Reuse a chart |
 | [results/results.csv](results/results.csv) | The main results table | Check an exact number |
+| [results/comparison_test.csv](results/comparison_test.csv) | Four more algorithms on the same inputs, next to the baselines and the model | Compare algorithms |
 | [results/impact.csv](results/impact.csv) | Impact numbers, each with a line on how it was computed | Check an impact claim |
 | [results/README.md](results/README.md) | An index of every results file | Find a specific table |
 | [results/priority_list.csv](results/priority_list.csv) | Restaurants ranked by estimated risk | Read [the note](results/priority_list_note.md) first: the scores are estimates, not findings about any business |
-| [notebooks](notebooks) | The analysis, step by step (01 data, 02 baselines, 03 models, 04 results, 05 fine-tuning) | See how a number was produced |
+| [notebooks](notebooks) | The analysis, step by step (01 data, 02 baselines, 03 models, 04 results, 05 fine-tuning, 06 model comparison) | See how a number was produced |
 | [docs/DECISIONS.md](docs/DECISIONS.md) | Each modeling choice, with the alternatives considered | See why a choice was made |
 | [docs/setup.md](docs/setup.md) | Setup and reproduction notes | Reproduce our exact files, or run on other hardware |
 | [docs/data_dictionary.md](docs/data_dictionary.md) | Every column in the data and every model input | Check what a field or an input means |

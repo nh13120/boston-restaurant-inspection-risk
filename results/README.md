@@ -56,7 +56,7 @@ Four more classification models on the same 17 inputs, splits and metrics: ridge
 
 | File | What it holds | Notebook |
 |---|---|---|
-| `comparison_test.csv` † | The four existing models (B0, B1, B2, M1) and the four added ones on the test years: settings, metrics with intervals, the 2023 hit rate, and the difference from LightGBM | 06 |
+| `comparison_test.csv` † | The four existing models (B0, B1, B2, M1) and the four added ones on the test years: settings, metrics with intervals, the 2023 hit rate, the difference from LightGBM, and the share of serious violations found (`serious_share_at_k`) | 06 |
 | `comparison_differences.csv` † | Each added model minus LightGBM and minus logistic regression, on 2023 and on the test years | 06 |
 | `comparison_val.csv` | The same eight models on 2023 | 06 |
 | `comparison_grid_val.csv` | Every setting tried for the four added models, 36 in all. An empty `max_depth` means no limit | 06 |

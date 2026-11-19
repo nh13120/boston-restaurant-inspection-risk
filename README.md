@@ -34,7 +34,7 @@ About 10 minutes on an M-series laptop, with internet access. [docs/setup.md](do
 | C3 Random forest† | 88.3% (87 to 90) | 40% |
 | C4 XGBoost† | 88.2% (87 to 90) | 40% |
 
-Intervals are bootstraps over restaurants. Paired differences: M1 leads B1 by 7.8 points (6.5 to 9.1) and B2 by 1.1 (0.3 to 1.9), and M3 leads M1 by 1.0 (0.3 to 1.8). On M1's inputs, random forest, XGBoost and LASSO are within noise of it (+0.2, +0.1 and +0.0 points) and tuned ridge equals B2, so M1 stays the final model. The yearly total (about 3,544 failed inspections) is the same in any order: ranking changes when they are found. In the first 20% of visits (1,201 a year), M1 finds 42† to 94 more of them than a simple rule, the closer comparison to current practice, and 349 more than with no ranking (CI 333 to 364).
+Intervals are bootstraps over restaurants. Paired differences: M1 leads B1 by 7.8 points (6.5 to 9.1) and B2 by 1.1 (0.3 to 1.9), and M3 leads M1 by 1.0 (0.3 to 1.8). On M1's inputs, random forest, XGBoost and LASSO are within noise of it (+0.2, +0.1 and +0.0 points) and tuned ridge is within noise of B2, so M1 stays the final model. The yearly total (about 3,544 failed inspections) is the same in any order: ranking changes when they are found. In the first 20% of visits (1,201 a year), M1 finds 42† to 94 more of them than a simple rule, the closer comparison to current practice, and 349 more than with no ranking (CI 333 to 364).
 
 † Added after the first test scoring: extra reporting on the frozen predictions, or, for M3 and C1 to C4, models built afterwards with their own freeze.
 

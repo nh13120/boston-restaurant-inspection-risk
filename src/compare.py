@@ -7,6 +7,7 @@ neighborhood. Settings are chosen on the validation year only (see notebook 06).
 from itertools import product
 
 import pandas as pd
+import sklearn
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
@@ -38,6 +39,10 @@ LABELS = {
     "C1_ridge_logreg": "Ridge logistic regression", "C2_lasso_logreg": "LASSO logistic regression",
     "C3_random_forest": "Random forest", "C4_xgboost": "XGBoost",
 }
+
+# From scikit-learn 1.8 on, l1_ratio alone selects the penalty. Older versions would ignore it
+# and fit ridge under the LASSO name, with only a warning.
+assert tuple(int(part) for part in sklearn.__version__.split(".")[:2]) >= (1, 8), "src/compare.py needs scikit-learn 1.8 or later"
 
 
 def _logreg(C, l1):

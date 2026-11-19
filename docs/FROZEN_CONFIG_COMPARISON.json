@@ -1,0 +1,39 @@
+{
+  "status": "added after the first test evaluation; settings chosen on validation (2023) only; the final model is not re-picked from this comparison",
+  "seed": 42,
+  "selection_metric": "precision_at_k on validation (2023); ties go to the higher AUC, then to the simpler setting",
+  "features": "the 17 history features of docs/FROZEN_CONFIG.json, as the one-hot matrix of models.linear_matrix",
+  "fit_rows_for_test": "train + validation (2016 to 2023), as for every other model",
+  "C1_ridge_logreg": {
+    "params": {
+      "C": 0.001
+    },
+    "fixed": "L2 penalty, lbfgs solver, same preparation as B2 (B2 is this model at C=1)",
+    "settings_tried": 6
+  },
+  "C2_lasso_logreg": {
+    "params": {
+      "C": 0.001
+    },
+    "fixed": "L1 penalty, saga solver, same preparation as B2",
+    "settings_tried": 6
+  },
+  "C3_random_forest": {
+    "params": {
+      "n_estimators": 500,
+      "max_depth": null,
+      "max_features": "sqrt"
+    },
+    "fixed": "min_samples_leaf=20, one-hot columns, missing values handled by the trees",
+    "settings_tried": 12
+  },
+  "C4_xgboost": {
+    "params": {
+      "max_depth": 4,
+      "learning_rate": 0.05,
+      "n_estimators": 139
+    },
+    "fixed": "hist trees, early stopping on validation AUC (50 rounds), one-hot columns",
+    "settings_tried": 12
+  }
+}

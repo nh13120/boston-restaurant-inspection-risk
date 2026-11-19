@@ -59,7 +59,7 @@ These describe the inspection being predicted. They are kept to build the next r
 
 | Column | Type | Meaning |
 |---|---|---|
-| `businessname` | text | Business name. It is not a model input and is not published: the priority list identifies restaurants by license number. |
+| `businessname` | text | Business name. It is not a model input, and the priority list prints the license number in its place. |
 | `descript` | text | Establishment type. |
 | `license_issue_date` | date | Current license issue date in the snapshot. |
 | `licstatus` | text | Full table only. License status on the pull date (`Active`, `Inactive` or `Deleted`). It describes today, so it is never a feature. |

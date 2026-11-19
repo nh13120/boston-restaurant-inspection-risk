@@ -11,7 +11,7 @@ pip install -r requirements-lock.txt      # every package pinned, not only the d
 mkdir -p data/raw                         # place inspections_snapshot.parquet here
 ```
 
-The snapshot is not in the repo, because raw inspector comments contain names and emails. Keep `data/` unpublished. To get the file, open an issue on the GitHub repository. With it in place, notebooks 01 to 04 regenerate every file in `results/` and `preds/` byte for byte, except the M3 files, which come from the optional notebook 05, and the comparison files, which come from the optional notebook 06.
+The snapshot is not in the repo, because raw inspector comments contain names and emails. Keep `data/` unpublished. To get the file, open an issue on the GitHub repository. With it in place, notebooks 01 to 04 regenerate every file in `results/` and `preds/` byte for byte, except the M3 files, which come from the optional notebook 05, and the files written by the optional notebook 06, which `results/README.md` lists.
 
 After a run, `git status` lists the four notebooks as modified, because executing them in place updates their saved outputs and timestamps. Run `git status results preds` to check the outputs: it should print nothing.
 
@@ -22,9 +22,9 @@ Two warnings are harmless: "Kernel is running over TCP without encryption" from 
 Run every notebook from `notebooks/` with `jupyter nbconvert --to notebook --execute --inplace <name>.ipynb`.
 
 1. `01_data`, `02_baselines`, `03_models`, `04_results`, in that order. This is the README's command.
-2. `05_finetune`, optional. It reads the predictions written by 02 to 04 and writes `results/finetune_test.csv`.
+2. `05_finetune`, optional. It reads the predictions written by 03 and 04 and writes `results/finetune_test.csv`.
 3. `04_results` once more, only if you ran 05. Notebook 04 draws `text_value_bar.png` from that file and skips the chart when the file is missing.
-4. `06_model_comparison`, optional. It reads the saved predictions of every earlier notebook, and includes M3 when notebook 05 has been run.
+4. `06_model_comparison`, optional. It reads the saved predictions of every earlier notebook, and includes M3 from its saved predictions in `preds/`.
 
 ## Hardware
 

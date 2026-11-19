@@ -1,6 +1,6 @@
 # What is in this folder
 
-Notebooks 01 to 04 write every other file here except the M3 files (`finetune_*` and `m3_selected_settings.json`), which come from the optional notebook 05, and the `comparison_*` files and `readme_table.csv`, which come from the optional notebook 06.
+Notebooks 01 to 04 write every other file here except the M3 files (`finetune_*` and `m3_selected_settings.json`), which come from the optional notebook 05, and the `comparison_*` files, `readme_table.csv` and `figures/model_comparison.png`, which come from the optional notebook 06.
 
 Files ending in `_val`, or starting with `validation_`, come from the validation year (2023), which was used to choose settings. So do `selected_settings.json`, `m3_selected_settings.json`, `comparison_selected_settings.json` and `text_examples.md`. The other tables come from the test years (2024 to November 2026). The headline tables were scored once, after the settings were frozen. Files marked † were added after the first test scoring: extra reporting on those same frozen predictions, or, for the M3 and comparison files, models built afterwards with their own freeze. `priority_list.csv` is different again: it scores each restaurant's next inspection with a model refitted on all the data.
 
@@ -62,7 +62,7 @@ Four more classification models on the same 17 inputs, splits and metrics (ridge
 | `comparison_lasso_weights.csv` † | The non-zero weights of the LASSO model fitted on 2016 to 2023. Inputs are scaled, so the sizes compare | 06 |
 | `comparison_test.csv` † | The four existing models (B0, B1, B2, M1), the four added ones and LightGBM without location on the test years: settings, metrics with intervals, the 2023 hit rate, the difference from LightGBM, and the share of serious violations found (`serious_share_at_k`) | 06 |
 | `comparison_differences.csv` † | Each added model minus LightGBM and minus logistic regression, on 2023 and on the test years | 06 |
-| `comparison_val.csv` | The same eight models on 2023 | 06 |
+| `comparison_val.csv` | The same nine models on 2023 | 06 |
 | `comparison_grid_val.csv` | Every setting tried for the four added models, 36 in all. An empty `max_depth` means no limit | 06 |
 | `comparison_selected_settings.json` | The settings chosen on 2023. Identical to the frozen copy in `docs/FROZEN_CONFIG_COMPARISON.json` | 06 |
 

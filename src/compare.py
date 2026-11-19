@@ -18,7 +18,7 @@ from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier
 
 from src.evaluate import evaluate
-from src.models import HISTORY_FEATURES, SEED, TARGET, fit_lgbm, linear_matrix
+from src.models import CAT_FEATURES, HISTORY_FEATURES, SEED, TARGET, fit_lgbm, linear_matrix
 
 # Small, explicit grids. Each list runs from the
 # simplest setting to the most flexible, because ties on validation go to the simpler setting.
@@ -39,7 +39,7 @@ FIXED = {
 }
 # M1 with its frozen settings and without zip code and neighborhood: the version the project recommends.
 NO_LOCATION = "M1_lgbm_no_location"
-NO_LOCATION_FEATURES = [f for f in HISTORY_FEATURES if f not in ("zip", "neighborhood")]
+NO_LOCATION_FEATURES = [f for f in HISTORY_FEATURES if f not in CAT_FEATURES]      # zip and neighborhood are the two location inputs
 
 LABELS = {
     "C1_ridge_logreg": "Ridge logistic regression", "C2_lasso_logreg": "LASSO logistic regression",
@@ -136,6 +136,7 @@ def plot_comparison(table, path=None, final="M1_lgbm", xmin=78.0):
     shown = table[table["hit"] >= xmin].sort_values("hit").reset_index(drop=True)
     left_out = table[table["hit"] < xmin]
     is_final = (shown["model"] == final).to_numpy()
+    assert is_final.any(), f"{final} is not among the methods shown (hit rate at or above {xmin}%)"
     colors = ["#c44e52" if f else "#4c72b0" for f in is_final]
 
     fig, ax = plt.subplots(figsize=(10, 0.5 * len(shown) + 2.4))

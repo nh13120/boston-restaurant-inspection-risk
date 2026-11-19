@@ -34,9 +34,11 @@ Everything on this page except the first two charts, the 349, the lead over logi
 
 ## Why this model
 
-LightGBM on the inspection history is the final model. Its settings were fixed on 2023, before the test years were scored, and no other algorithm given the same inputs beats it by more than noise. The chart shows every method we tried. The learned ones sit within about two points of each other, so the choice rests on more than the hit rate at 20%.
+LightGBM on the inspection history is the final model. Its settings were fixed on 2023, before the test years were scored, and no other algorithm given the same inputs beats it by more than noise. The chart shows every method in the results table. The learned ones sit within about two points of each other, so the choice rests on more than the hit rate at 20%.
 
 ![Hit rate of every method](results/figures/model_comparison.png)
+
+Each line is the range of one method. Two methods are compared on the same resamples, which is tighter, so two overlapping lines can still hide a real difference (`results/comparison_differences.csv`).
 
 | | Logistic regression | LASSO | LightGBM (final) | LightGBM without location | LightGBM + fine-tuned comments |
 |---|---|---|---|---|---|
@@ -47,9 +49,9 @@ LightGBM on the inspection history is the final model. Its settings were fixed o
 | Dorchester and Roxbury inspections among the first visits | 49%, 21% | 38%, 24% | 46%, 19% | 35%, 24% | 45%, 22% |
 | What it takes | one formula, 77 weights | one formula, 4 weights that matter | LightGBM, seconds on a laptop | the same, two inputs fewer | a neural network that reads inspector comments |
 
-- The comment model is the most accurate at 20%, by one point. In the first 10% of visits it is within noise of LightGBM, and it finds failures 0.01 weeks sooner. That does not pay for a neural network, a 40-minute fit and reading comments that contain names.
+- The comment model is the most accurate at 20%, one point ahead of the final model. In the first 10% of visits it is within noise of LightGBM, and it finds failures 0.01 weeks sooner. That does not pay for a neural network, a 40-minute fit and reading comments that contain names.
 - LASSO is the easiest to explain. Four weights carry its score: violations at the last routine inspection, the share of past routine inspections failed, whether the previous visit failed, and the number of inspections in the last three years. It ties LightGBM at 20% but is 2 points behind in the first 10% of visits, and it underestimates the riskiest restaurants (86% estimated, 91% observed). It is the model to choose if a formula short enough to read matters more than those 2 points.
-- LightGBM without location is the version we recommend for use. It is within noise of the final model on every measure, and its first visits follow the fail rate more closely.
+- LightGBM without location is the version we recommend for use. On the test years it is within noise of the final model on the hit rate at 5%, 10% and 20% of visits and on AUC, and it narrows the gap between Dorchester and Roxbury, which fail equally often.
 
 ## Limits
 
@@ -59,7 +61,7 @@ LightGBM on the inspection history is the final model. Its settings were fixed o
 - The results rank past visits using what was known on each visit date, including when ISD chose to visit. They measure how good the ranking is. They are not a simulation of a new schedule.
 - 20% is an illustrative capacity, and the hit rate fell from 90.1% in 2024 to 84.9% in 2026, so the model would need refitting each year.
 - The choice of algorithm adds little: the model leads logistic regression by 1.1 points (95% range 0.3 to 1.9). Four more algorithms given the same inputs (ridge and LASSO logistic regression, random forest, XGBoost) find a failure in 86.9% to 88.3% of the first visits, against the model's 88.1%. Most of the gain comes from the inspection history.
-- One input reads backwards. "Previous visit failed" marks a late follow-up, a visit more than 30 days after a failure. Those usually pass, so the model ranks them lower. For the same reason the priority list ranks low the 31 restaurants whose last visit failed more than 30 days ago and that have not been visited since: treat them as overdue follow-ups. Without them, the model's lead over the simple rule falls from 7.8 points to 3.7. Counting each restaurant once, it is 3.3 points (95% range 1.1 to 5.6).
+- One input reads backwards. "Previous visit failed" marks a late follow-up, a visit more than 30 days after a failure. Those usually pass, so the model ranks them lower. Without the 693 late follow-ups in the test years, the model's lead over the simple rule falls from 7.8 points to 3.7. Counting each restaurant once, it is 3.3 points (95% range 1.1 to 5.6). For the same reason the priority list ranks low the 31 restaurants whose last visit failed more than 30 days ago and that have not been visited since: treat them as overdue follow-ups.
 - The 95% ranges resample whole restaurants. They do not account for inspectors covering the same district, so they may be too narrow.
 - Scores are estimates, not findings about any business.
 
@@ -73,7 +75,7 @@ LightGBM on the inspection history is the final model. Its settings were fixed o
 | [results/comparison_tradeoffs.csv](results/comparison_tradeoffs.csv) | What the choice of model rests on: tighter capacities, timing, calibration, neighborhoods | Check the table above |
 | [results/impact.csv](results/impact.csv) | Impact numbers, each with a line on how it was computed | Check an impact claim |
 | [results/README.md](results/README.md) | An index of every results file | Find a specific table |
-| [results/priority_list.csv](results/priority_list.csv) | Active restaurants, by license number, ranked by estimated risk | Read [the note](results/priority_list_note.md) first: the scores are estimates, not findings about any business |
+| [results/priority_list.csv](results/priority_list.csv) | Active restaurants, by license number, ranked by estimated risk. Built with the frozen model, which includes location | Read [the note](results/priority_list_note.md) first: the scores are estimates, not findings about any business |
 | [notebooks](notebooks) | The analysis, step by step (01 data, 02 baselines, 03 models, 04 results, and the optional 05 fine-tuning and 06 model comparison) | See how a number was produced |
 | [docs/DECISIONS.md](docs/DECISIONS.md) | Each modeling choice, with the alternatives considered | See why a choice was made |
 | [docs/setup.md](docs/setup.md) | Setup and reproduction notes | Reproduce our exact files, or run on other hardware |
@@ -97,4 +99,4 @@ The raw data is not in the repo: the inspector comments contain people's names a
 | Test years (2024 to 2026) | Years the model never saw while settings were chosen. All headline numbers come from here |
 | LightGBM | The machine-learning model chosen: many small decision trees, each correcting the last |
 | Embeddings | Comment text turned into numbers by a language model so the main model can use it |
-| 95% range | How much a number could move by chance. Bars with overlapping ranges are not clearly different |
+| 95% range | How much a number could move by chance. Each range is for one method. A difference between two methods has its own, tighter range, so overlapping ranges can still hide a real difference |

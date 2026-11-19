@@ -1,6 +1,6 @@
 # What is in this folder
 
-Notebooks 01 to 04 write every other file here except the M3 files (`finetune_*` and `m3_selected_settings.json`), which come from the optional notebook 05, and the `comparison_*` files, which come from the optional notebook 06.
+Notebooks 01 to 04 write every other file here except the M3 files (`finetune_*` and `m3_selected_settings.json`), which come from the optional notebook 05, and the `comparison_*` files and `readme_table.csv`, which come from the optional notebook 06.
 
 Files ending in `_val`, or starting with `validation_`, come from the validation year (2023), which was used to choose settings. So do `selected_settings.json`, `m3_selected_settings.json`, `comparison_selected_settings.json` and `text_examples.md`. The other tables come from the test years (2024 to November 2026). The headline tables were scored once, after the settings were frozen. Files marked † were added after the first test scoring: extra reporting on those same frozen predictions, or, for the M3 and comparison files, models built afterwards with their own freeze. `priority_list.csv` is different again: it scores each restaurant's next inspection with a model refitted on all the data.
 
@@ -14,7 +14,7 @@ In the tables, `precision_at_k` is the hit rate: the share of the first 20% of v
 | `finetune_test.csv` † | The same table with the fine-tuned text model (M3) and a text-only model added | 05 |
 | `model_differences.csv` | Differences between pairs of models, with intervals and a verdict | 04 |
 | `results_by_year.csv` | Hit rate and extra failures found, for each test year. The column against ISD's actual order was added later † | 04 |
-| `robustness.csv` † | The same metrics on all test inspections and on two stricter slices | 04 |
+| `robustness.csv` | The same metrics on all test inspections and on two stricter slices. The one-per-restaurant slice and the lead-over-B1 columns were added later † | 04 |
 | `rule_sensitivity.csv` | A second simple rule (most violations at the last routine inspection first) against the final model | 04 |
 | `permutation_importance.csv` † | How far the hit rate falls when each input is scrambled: how much the frozen model relies on it | 04 |
 | `feature_importance.csv` | How much the final model used each input while training (LightGBM split gain). It favors inputs with many values, such as zip code, so use `permutation_importance.csv` to see what the model relies on | 04 |
@@ -52,11 +52,15 @@ In the tables, `precision_at_k` is the hit rate: the share of the first 20% of v
 
 ## Wider model comparison
 
-Four more classification models on the same 17 inputs, splits and metrics: ridge and LASSO logistic regression, random forest and XGBoost. `docs/DECISIONS.md` (PF.6) gives the reasoning and the reading of the results.
+Four more classification models on the same 17 inputs, splits and metrics (ridge and LASSO logistic regression, random forest, XGBoost), and LightGBM without zip code and neighborhood. `docs/DECISIONS.md` (PF.6 and PF.7) gives the reasoning, the reading of the results and the choice of final model.
 
 | File | What it holds | Notebook |
 |---|---|---|
-| `comparison_test.csv` † | The four existing models (B0, B1, B2, M1) and the four added ones on the test years: settings, metrics with intervals, the 2023 hit rate, the difference from LightGBM, and the share of serious violations found (`serious_share_at_k`) | 06 |
+| `readme_table.csv` † | Every row of the README's results table in one file: the two rules, B2, M1, M1 without location, the four added algorithms, M2 and M3 | 06 |
+| `comparison_tradeoffs.csv` † | What the choice of final model rests on, for every learned model: hit rate in the first 5%, 10% and 20% of visits, AUC, weeks earlier, calibration, and the share of Dorchester's and Roxbury's inspections among the first visits | 06 |
+| `comparison_capacity_differences.csv` † | Each learned model minus LightGBM in the first 5% and 10% of visits, with intervals from 2,000 resamples | 06 |
+| `comparison_lasso_weights.csv` † | The non-zero weights of the LASSO model fitted on 2016 to 2023. Inputs are scaled, so the sizes compare | 06 |
+| `comparison_test.csv` † | The four existing models (B0, B1, B2, M1), the four added ones and LightGBM without location on the test years: settings, metrics with intervals, the 2023 hit rate, the difference from LightGBM, and the share of serious violations found (`serious_share_at_k`) | 06 |
 | `comparison_differences.csv` † | Each added model minus LightGBM and minus logistic regression, on 2023 and on the test years | 06 |
 | `comparison_val.csv` | The same eight models on 2023 | 06 |
 | `comparison_grid_val.csv` | Every setting tried for the four added models, 36 in all. An empty `max_depth` means no limit | 06 |
@@ -73,6 +77,7 @@ Four more classification models on the same 17 inputs, splits and metrics: ridge
 | `neighborhood_first_visits.png` † | Each neighborhood's chance of an early visit, with location as is and scrambled | 04 |
 | `permutation_importance.png` † | How far the hit rate falls when each input is scrambled | 04 |
 | `gains_curve_test.png` | Failures found as more visits are made, test years | 04 |
+| `model_comparison.png` † | Hit rate of every method with its 95% range, on one narrow axis | 06 |
 | `gains_curve_val.png` | The same curve on 2023, all models | 03 |
 | `gains_curve_val_baselines.png` | The same curve on 2023, baselines only | 02 |
 | `reinspection_gap.png` | Days between a failed inspection and the next visit, which supports the 30-day cutoff | 01 |

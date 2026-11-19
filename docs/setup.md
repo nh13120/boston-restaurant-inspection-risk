@@ -17,11 +17,20 @@ After a run, `git status` lists the four notebooks as modified, because executin
 
 Two warnings are harmless: "Kernel is running over TCP without encryption" from nbconvert, and "Redirects are currently not supported" from torch.
 
+## Run order
+
+Run every notebook from `notebooks/` with `jupyter nbconvert --to notebook --execute --inplace <name>.ipynb`.
+
+1. `01_data`, `02_baselines`, `03_models`, `04_results`, in that order. This is the README's command.
+2. `05_finetune`, optional. It reads the predictions written by 02 to 04 and writes `results/finetune_test.csv`.
+3. `04_results` once more, only if you ran 05. Notebook 04 draws `text_value_bar.png` from that file and skips the chart when the file is missing.
+4. `06_model_comparison`, optional. It reads the saved predictions of every earlier notebook, and includes M3 when notebook 05 has been run.
+
 ## Hardware
 
 - Verified on Apple Silicon (macOS) only. Linux and Windows are untested, and the README's commands assume a POSIX shell.
 - M1, the final model, is deterministic. M2 uses text embeddings, which differ in the sixth decimal between devices. That can move M2's hit rate by about 0.3 points.
-- Notebook 06 (ridge and LASSO logistic regression, random forest, XGBoost) runs on the CPU in about 8 minutes. A second run on our machine gave identical files.
+- Notebook 06 (the wider model comparison) runs on the CPU in about 12 minutes. A second run on our machine gave identical files. It needs our snapshot: with freshly pulled data, early stopping can select a different number of trees, and the notebook then stops instead of scoring a model that was not frozen.
 - Notebook 05 fine-tunes on an Apple GPU (MPS) when one is available, which takes about 40 minutes, and on the CPU otherwise, which is much slower. CUDA is not wired in. A GPU run is not guaranteed to give identical numbers twice.
 
 ## macOS: LightGBM and OpenMP

@@ -1,0 +1,20 @@
+input,weight
+last_routine_n_viol,0.43419163376704323
+prior_routine_fail_rate,0.4091581649552733
+last_fail,-0.16656003412129536
+prior_n_3y,0.11914694526077936
+zip_02110,-0.015195706359125854
+last_routine_fail,0.015028614626096544
+neighborhood_Dorchester,0.014728886811252026
+neighborhood_Boston,-0.014649003201676067
+month,-0.012196730476641689
+is_first,-0.006268828861061225
+missing: prior_fail_rate,-0.006268828861061225
+missing: prior_routine_fail_rate,-0.006268828861061225
+missing: last_fail,-0.006268828861061225
+missing: last_n_viol,-0.006268828861061225
+missing: last_n_lvl3,-0.006268828861061225
+missing: last_routine_fail,-0.006268828861061225
+missing: last_routine_n_viol,-0.006268828861061225
+missing: last_routine_n_lvl3,-0.006268828861061225
+missing: days_since_last,-0.006268828861061225

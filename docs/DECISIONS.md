@@ -221,7 +221,7 @@ Left as is, for the team to decide:
 
 What this means for the project: the deep-learning part works as a text reader but is not what makes the ranking good. The honest claim is "comments alone get within a few points of the full history, and add nothing on top of it". Alternative not yet tried: fine-tuning the encoder on these comments, which is the natural way to see whether deep learning can beat the bag of words here.
 
-**PF.2 Fine-tuning the encoder (model M3).** Tried to see whether fine-tuning on the text beats the frozen encoder and the bag of words. Code in `src/finetune.py`, run by the optional notebook 05.
+**PF.2 Fine-tuning the encoder (model M3).** Tried to see whether fine-tuning on the text beats the frozen encoder and the bag of words. Code in `src/finetune.py`, run by notebook 05.
 
 - Design. The same MiniLM encoder as M2, now trained further with a classification head: input = a routine inspection's earlier comments, target = whether it failed. 128 tokens, 2 epochs, learning rate 5e-5, batch 32, set once and not tuned. Alternative: 256 tokens, three times slower; a quarter to a third of comments are longer than 128 tokens.
 - No look-ahead. A text model trained on 2016 to 2022 and then used to score those same years would hand LightGBM scores that have seen the answers. So text models are trained in time blocks: each is trained on everything before a cutoff (inspections since 2007 count) and scores only what comes after. Four models cover 2016 to 2023, and a fifth, trained on everything before 2024, scores the test years.

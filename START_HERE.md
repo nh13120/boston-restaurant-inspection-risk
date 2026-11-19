@@ -76,7 +76,7 @@ Each line is the range of one method. Two methods are compared on the same resam
 | [results/impact.csv](results/impact.csv) | Impact numbers, each with a line on how it was computed | Check an impact claim |
 | [results/README.md](results/README.md) | An index of every results file | Find a specific table |
 | [results/priority_list.csv](results/priority_list.csv) | Active restaurants, by license number, ranked by estimated risk. Built with the frozen model, which includes location | Read [the note](results/priority_list_note.md) first: the scores are estimates, not findings about any business |
-| [notebooks](notebooks) | The analysis, step by step (01 data, 02 baselines, 03 models, 04 results, and the optional 05 fine-tuning and 06 model comparison) | See how a number was produced |
+| [notebooks](notebooks) | The analysis, step by step (01 data, 02 baselines, 03 models, 04 results, 05 fine-tuning, 06 model comparison) | See how a number was produced |
 | [docs/DECISIONS.md](docs/DECISIONS.md) | Each modeling choice, with the alternatives considered | See why a choice was made |
 | [docs/setup.md](docs/setup.md) | Setup and reproduction notes | Reproduce our exact files, or run on other hardware |
 | [docs/data_dictionary.md](docs/data_dictionary.md) | Every column in the data and every model input | Check what a field or an input means |

@@ -1,6 +1,6 @@
 # What is in this folder
 
-Notebooks 01 to 04 write every other file here except the M3 files (`finetune_*` and `m3_selected_settings.json`), which come from the optional notebook 05, and the `comparison_*` files, `readme_table.csv` and `figures/model_comparison.png`, which come from the optional notebook 06.
+Notebooks 01 to 04 write every other file here except the M3 files (`finetune_*` and `m3_selected_settings.json`), which come from notebook 05, and the `comparison_*` files, `readme_table.csv` and `figures/model_comparison.png`, which come from notebook 06.
 
 Files ending in `_val`, or starting with `validation_`, come from the validation year (2023), which was used to choose settings. So do `selected_settings.json`, `m3_selected_settings.json`, `comparison_selected_settings.json` and `text_examples.md`. The other tables come from the test years (2024 to November 2026). The headline tables were scored once, after the settings were frozen. Files marked † were added after the first test scoring: extra reporting on those same frozen predictions, or, for the M3 and comparison files, models built afterwards with their own freeze. `priority_list.csv` is different again: it scores each restaurant's next inspection with a model refitted on all the data.
 

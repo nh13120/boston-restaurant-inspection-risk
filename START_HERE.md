@@ -6,17 +6,17 @@ The project ranks Boston's routine restaurant inspections by how likely each one
 
 ## What we recommend
 
-1. Within the city's existing schedule, order visits by inspection history. The city already inspects lower-graded restaurants more often. What the model adds is an order among those visits: a simple rule on past failures finds a failure in 80% of the first visits, and the model in 88%. The model's lead is largest when inspector time is tight: counting only the first 5% of visits, it finds a failure 94% of the time, against 73% for the rule.
+1. Keep the city's schedule and order the visits by inspection history. ISD visits a restaurant about twice a year, and no published rule says which visit comes first. In the data, the visits it made first in each quarter found a failure 62% of the time. A simple rule on past failures reaches 80%, and the model 88%. The model's lead is largest when inspector time is tight: counting only the first 5% of visits, it finds a failure 94% of the time, against 73% for the rule.
 2. Leave location out of the model. It does not help the model find failures, and it shifts early visits between neighborhoods (fourth chart). On the test years the model without zip code and neighborhood finds a failure in 88.7% of the first visits, against 88.1% with them, a difference within noise. Dorchester and Roxbury, which fail equally often, then get 35% and 24% of their inspections among the first visits, against 46% and 19%.
 3. Consider returning sooner to restaurants that pass but rank high. Among inspections that passed, the 299 the model ranked in its riskiest 20% failed their next routine inspection 60% of the time, against 43% for the others, and the city returned to them only 18 days sooner. The group is small, so the estimate is rough. It shows that the score still carries information after a pass, not that an earlier return would change the outcome.
 
 ## The results in four charts
 
-How often a visit finds a failure, if inspectors make the riskiest 20% of visits first. A simple rule on past failures reaches 80%, and the model 88%. The city already inspects lower-graded restaurants more often, so the simple rule is the closer comparison to today, and the model's gain over it is about 8 points. With no ranking at all, the figure would be 59%. That is a reference point, not the city's practice.
+How often a visit finds a failure, if inspectors make the riskiest 20% of visits first. A simple rule on past failures reaches 80%, and the model 88%, a gain of about 8 points. With no ranking at all, the figure would be 59%. The order ISD actually followed is close to that: the visits it made first in each quarter found a failure 61.5% of the time.
 
 ![Hit rate by method](results/figures/hit_rate_bar.png)
 
-What that means per year: in the same 1,201 visits, the model finds 42 to 94 more of the year's 3,544 failed inspections than a simple rule would, and about 349 more than with no ranking. The yearly total does not change, because every restaurant is inspected sooner or later. Ranking finds failures earlier: by 1.1 weeks on average within a quarter, against 0.8 to 0.9 weeks with a simple rule.
+What that means per year: in the same 1,201 visits, the model finds 42 to 94 more of the year's 3,544 failed inspections than a simple rule would, about 324 more than in the order ISD actually followed, and about 349 more than with no ranking. The yearly total does not change, because every restaurant is inspected sooner or later. Ranking finds failures earlier: by 1.1 weeks on average within a quarter, against 0.8 to 0.9 weeks with a simple rule.
 
 ![Failed inspections found per year](results/figures/impact_bar.png)
 
@@ -55,8 +55,8 @@ Each line is the range of one method. Two methods are compared on the same resam
 
 ## Limits
 
-- The city does not inspect at random. It inspects every restaurant at least once a year and lower-graded ones more often: grade A yearly, B every six months, C every three months ([how the city grades restaurants](https://www.boston.gov/departments/inspectional-services/how-we-grade-restaurants-and-food-trucks), [food service permit](https://www.boston.gov/departments/inspectional-services/how-get-food-service-permit)). "No ranking" is a reference point for what ordering adds, not a description of current practice. The simple rules are the closer comparison, and against them the gain is 42 to 94 failed inspections found early each year, not 349.
-- How the city orders visits within a period is not published. In the data, the visits ISD made first in each quarter failed 61.5% of the time, against 59.0% overall, so that order looks close to unranked.
+- What the city does today. It says it inspects food businesses "at least once a year, but usually twice each year" ([food service permit](https://www.boston.gov/departments/inspectional-services/how-get-food-service-permit)), and that low-scoring restaurants are inspected more often ([how the city grades restaurants](https://www.boston.gov/departments/inspectional-services/how-we-grade-restaurants-and-food-trucks)). In the data, a restaurant's routine inspections are a median of 176 days apart: 160 days for the fifth with the worst past records, 196 days for the best fifth. So a restaurant's record changes how often it is visited only a little. "No ranking" is a reference point for what ordering adds. The simple rules show what ISD could get without a model: against them the gain is 42 to 94 failed inspections found early each year, against 324 for the order ISD actually followed and 349 for no ranking.
+- How the city orders visits within a period is not published. In the data, the visits ISD made first in each quarter failed 61.5% of the time, against 59.0% overall, so that order looks close to unranked. This is our estimate from visit dates, and the season within a quarter or complaint-driven visits can move it.
 - Some visits are triggered by complaints or illness reports, not scheduled. The data does not say which, so they are counted as routine. They probably fail more often and cannot be rescheduled, which inflates the 59% and the gains by an unknown amount.
 - The results rank past visits using what was known on each visit date, including when ISD chose to visit. They measure how good the ranking is. They are not a simulation of a new schedule.
 - 20% is an illustrative capacity, and the hit rate fell from 90.1% in 2024 to 84.9% in 2026, so the model would need refitting each year.
@@ -93,7 +93,7 @@ The raw data is not in the repo: the inspector comments contain people's names a
 | Failure | An inspection result that requires a follow-up visit. A pass can still list violations |
 | Hit rate | Share of visits that find a failure |
 | First 20% of visits | The riskiest fifth of inspections, visited first. It stands in for limited inspector time |
-| No ranking | A reference point: visits made in an order that ignores risk. It is not the city's current practice, which already inspects lower-graded restaurants more often |
+| No ranking | A reference point: visits made in an order that ignores risk. The order ISD actually followed scores close to it: 61.5% of its first visits found a failure, against 59.0% |
 | Simple rule | Rank restaurants by how often they failed before. A second rule ranks them by the number of violations at their last routine inspection. No model needed |
 | Validation year (2023) | The year used to choose settings |
 | Test years (2024 to 2026) | Years the model never saw while settings were chosen. All headline numbers come from here |

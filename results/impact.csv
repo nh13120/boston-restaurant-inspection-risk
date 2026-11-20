@@ -3,7 +3,7 @@ Routine inspections per year,6007.38290229885,,,"17,171 test inspections over 2.
 Fail rate in the test period,0.590006406149904,,,share of test inspections that failed
 "Failed inspections per year in total, in any visit order",3544.394396551724,,,fail rate x inspections per year; visiting in a different order does not change this total
 Visits per year in the first 20%,1201.47658045977,,,20% x inspections per year
-"Failed inspections found per year in the first 20% of visits, random order",708.8788793103448,,,"fail rate x visits (average over all random orders). A reference point with no ranking, not the city's current practice: Boston already inspects lower-graded restaurants more often"
+"Failed inspections found per year in the first 20% of visits, random order",708.8788793103448,,,"fail rate x visits (average over all random orders). A reference point with no ranking. The order ISD actually followed is close to it: see the hit rate of the visits ISD made first, below"
 "Failed inspections found per year in the first 20% of visits, past-failure-rate rule (B1)",964.1903030846453,,,B1 test hit rate x visits
 "Failed inspections found per year in the first 20% of visits, M1_lgbm",1058.377011034014,,,M1_lgbm test hit rate x visits
 Extra failed inspections found per year in the first 20% of visits vs. random order,349.4981317236692,333.42066409801106,364.2814756133392,"difference of the lines above: failures found EARLIER, not additional failures"
@@ -30,3 +30,6 @@ Extra failed inspections found per year in the first 20% of visits vs. the last-
 "Share of all serious (level 3) violations found in the first 20% of visits, last-routine-violations rule (S1)",0.38958605432521404,,,"level 3 violations found by the first 20% of test visits / all 5,827 found in the test period"
 "Share of the first 20% of visits that find at least one serious violation, last-routine-violations rule (S1)",0.4203308834352217,,,test inspections in the first 20% with one or more level 3 violations
 "Share of all serious (level 3) violations found in the first 20% of visits, ISD's actual order",0.20905022928570668,,,"the visits ISD actually made first (first 20% of each quarter, by date); a rough picture of today's order"
+Median days between a restaurant's routine inspections,176.0,,,"16,210 test-period routine inspections that follow an earlier one; the middle half is 122 to 244 days"
+"Median days between a restaurant's routine inspections, restaurants in the best fifth of past routine fail rates",196.0,,,"3,275 test-period routine inspections that follow an earlier one; the middle half is 139 to 284 days"
+"Median days between a restaurant's routine inspections, restaurants in the worst fifth of past routine fail rates",160.0,,,"3,289 test-period routine inspections that follow an earlier one; the middle half is 105 to 217 days"

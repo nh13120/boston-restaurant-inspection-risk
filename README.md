@@ -1,6 +1,6 @@
 # Which Boston restaurants should be inspected first?
 
-For data scientists and ML engineers at Boston's Inspectional Services Department (ISD). Grades set how often ISD visits a restaurant, but the published schedule does not say which visit comes first. This repo ranks its 6,000 routine inspections a year (59% fail) by risk of failing. Charts and recommendations: [START_HERE.md](START_HERE.md).
+For data scientists and ML engineers at Boston's Inspectional Services Department (ISD). ISD visits a restaurant [about twice a year](https://www.boston.gov/departments/inspectional-services/how-get-food-service-permit), and no published rule says which visit comes first. This repo ranks its 6,000 routine inspections a year (59% fail) by risk of failing. Charts and recommendations: [START_HERE.md](START_HERE.md).
 
 ## How it works
 
@@ -38,8 +38,8 @@ cd notebooks && jupyter nbconvert --to notebook --execute --inplace 0[1-4]_*.ipy
 
 ## Impact and limits
 
-With the same inspectors and yearly total, ordering visits by M1 finds 42† to 94 more failed inspections a year in the first 20% of visits than a simple rule, and matches the past-failure rule's count with 10% fewer visits (116 a year). Against the order ISD actually used, it finds 324† more, and failures surface 1.1 weeks sooner (rules: 0.8 to 0.9†).
+With the same inspectors and yearly total, ordering visits by M1 finds 324† more failed inspections a year in the first 20% of visits than the order ISD actually used, and failures surface 1.1 weeks sooner (rules: 0.8 to 0.9†). Against a simple rule it still finds 42† to 94 more, and matches the past-failure rule's count with 10% fewer visits (116 a year).
 
-Limits: a rule is the stricter benchmark, because ISD already [visits lower-graded restaurants more often](https://www.boston.gov/departments/inspectional-services/how-we-grade-restaurants-and-food-trucks). The test reorders past visits, so run a pilot first. Refit yearly: the hit rate fell from 90.1% (2024) to 84.9% (2026).
+Limits: ISD's actual order is our estimate from visit dates (61.5%† of its first visits failed, 59.0% of all visits). The test reorders past visits, so run a pilot first. Refit yearly: the hit rate fell from 90.1% (2024) to 84.9% (2026).
 
 Nicolas Hong, Louis Neubauer, Robin Cen, Jose Plaza Carreras. MIT 15.071 Project 1, Fall 2026. [MIT license](LICENSE).

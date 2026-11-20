@@ -112,8 +112,8 @@ def impact_table(y, dates, scores, best, k=K, diff_ci=None):
          "fail rate x inspections per year; visiting in a different order does not change this total"),
         (f"Visits per year in the first {k:.0%}", visits, f"{k:.0%} x inspections per year"),
         (f"Failed inspections found per year {first}, random order", found_random,
-         "fail rate x visits (average over all random orders). A reference point with no ranking, not the city's current "
-         "practice: Boston already inspects lower-graded restaurants more often"),
+         "fail rate x visits (average over all random orders). A reference point with no ranking. The order ISD "
+         "actually followed is close to it: see the hit rate of the visits ISD made first, below"),
         (f"Failed inspections found per year {first}, past-failure-rate rule (B1)", found["B1_past_fail_rate"],
          "B1 test hit rate x visits"),
         (f"Failed inspections found per year {first}, {best}", found[best], f"{best} test hit rate x visits"),
